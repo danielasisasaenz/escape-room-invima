@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escape Room Documental — INVIMA | Multijugador individual</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--ink:#f0eee8;--ink-muted:#8b8fa8;--ink-dim:#555a72;--accent:#4a9eff;--accent-dim:rgba(74,158,255,.12);--gold:#f5c842;--gold-dim:rgba(245,200,66,.12);--green:#3ecf8e;--green-dim:rgba(62,207,142,.12);--red:#ff6b6b;--red-dim:rgba(255,107,107,.12);--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.14);--r:18px;--r2:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.6;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(74,158,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(74,158,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+/* header */
+.hdr{background:rgba(15,17,23,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:13px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.hdr-l{display:flex;align-items:center;gap:13px}
+.logo{width:38px;height:38px;background:linear-gradient(135deg,#4a9eff,#7b2fff);border-radius:10px;display:grid;place-items:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#fff;box-shadow:0 0 20px rgba(74,158,255,.4);flex-shrink:0}
+.hdr h1{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+.hdr p{font-size:11px;color:var(--ink-muted);font-weight:300}
+.btn-share{background:var(--accent-dim);border:1px solid rgba(74,158,255,.3);color:var(--accent);border-radius:8px;padding:8px 15px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+.btn-share:hover{background:var(--accent);color:#fff}
+/* screens */
+.screen{display:none;position:relative;z-index:1}
+.screen.active{display:block;animation:fadeUp .4s cubic-bezier(.22,1,.36,1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+/* menu */
+.mwrap{max-width:1080px;margin:0 auto;padding:52px 22px 80px}
+.mint{text-align:center;margin-bottom:52px}
+.badge{display:inline-flex;align-items:center;gap:5px;background:var(--gold-dim);border:1px solid rgba(245,200,66,.2);color:var(--gold);border-radius:50px;padding:5px 14px;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:18px}
+.mint h2{font-family:'Syne',sans-serif;font-size:clamp(30px,6vw,54px);font-weight:800;line-height:1.1;background:linear-gradient(135deg,#fff 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px}
+.mint p{color:var(--ink-muted);font-size:15px;max-width:480px;margin:0 auto;font-weight:300}
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.gcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:26px;cursor:pointer;transition:transform .25s,box-shadow .25s,border-color .25s;position:relative;overflow:hidden}
+.gcard::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--cg,linear-gradient(90deg,#4a9eff,#7b2fff));opacity:0;transition:opacity .2s}
+.gcard:hover{transform:translateY(-5px);box-shadow:0 0 40px rgba(74,158,255,.15);border-color:var(--border2)}
+.gcard:hover::after{opacity:1}
+.cico{width:50px;height:50px;border-radius:13px;background:var(--cib,var(--accent-dim));display:grid;place-items:center;font-size:23px;margin-bottom:16px}
+.gcard h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:7px}
+.gcard .desc{font-size:13px;color:var(--ink-muted);font-weight:300;line-height:1.55;margin-bottom:20px}
+.cftr{display:flex;align-items:center;justify-content:space-between}
+.qbadge{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--cc,var(--accent));line-height:1}
+.qbadge span{display:block;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;color:var(--ink-dim);margin-top:2px}
+.btn-enter{background:var(--cc,var(--accent));color:#000;border:none;border-radius:8px;padding:9px 18px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .18s,transform .18s}
+.btn-enter:hover{opacity:.85;transform:scale(1.04)}
+
+/* multiplayer room */
+.roombox{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin:-26px auto 34px;max-width:760px;box-shadow:0 0 30px rgba(74,158,255,.08)}
+.roombox h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:6px}
+.roombox p{font-size:13px;color:var(--ink-muted);font-weight:300;margin-bottom:14px}
+.roomrow{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.roominp{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 12px;font-size:13px;text-transform:uppercase;letter-spacing:1px;min-width:160px;outline:none}
+.roominp:focus{border-color:var(--accent)}
+.rbtn{background:var(--accent);border:none;color:#000;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;transition:opacity .18s,transform .18s}
+.rbtn:hover{opacity:.85;transform:translateY(-1px)}
+.rbtn.alt{background:var(--surface2);color:var(--ink);border:1px solid var(--border)}
+.roomstatus{margin-top:12px;font-size:12px;color:var(--ink-muted);padding:9px 11px;background:rgba(255,255,255,.03);border-radius:8px;border:1px dashed var(--border)}
+.roomstatus.on{color:var(--green);border-color:rgba(62,207,142,.28);background:var(--green-dim)}
+.roomcode{font-family:'Syne',sans-serif;color:var(--gold);font-weight:800;letter-spacing:1.5px}
+
+/* group */
+.gwrap{max-width:820px;margin:0 auto;padding:36px 22px 100px}
+.gnav{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.btn-back{background:var(--surface);border:1px solid var(--border);color:var(--ink-muted);border-radius:8px;padding:8px 15px;font-size:13px;font-weight:500;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:5px}
+.btn-back:hover{border-color:var(--border2);color:var(--ink)}
+.ghdr{margin-bottom:24px}
+.gey{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cc2,var(--accent));margin-bottom:7px}
+.ghdr h2{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:5px}
+.ghdr p{font-size:13px;color:var(--ink-muted);font-weight:300}
+/* score */
+.sbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:12px 18px;display:flex;gap:24px;margin-bottom:20px;flex-wrap:wrap}
+.sv .sl{font-size:11px;color:var(--ink-muted);font-weight:300;margin-bottom:2px}
+.sv .sn{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
+.sv.cor .sn{color:var(--green)}
+.sv.ans .sn{color:var(--accent)}
+/* stats */
+.srow{display:flex;gap:9px;margin-bottom:20px;flex-wrap:wrap}
+.schip{background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:7px 15px;font-size:13px;color:var(--ink-muted);display:flex;align-items:center;gap:7px}
+.schip strong{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.schip.av strong{color:var(--green)}
+.schip.us strong{color:var(--red)}
+/* draw btn */
+.btn-draw{width:100%;background:var(--cg2,linear-gradient(135deg,#4a9eff,#7b2fff));color:#fff;border:none;border-radius:var(--r2);padding:17px 24px;font-family:'Syne',sans-serif;font-size:18px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .15s;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:22px;box-shadow:0 4px 24px rgba(74,158,255,.3);letter-spacing:-.2px}
+.btn-draw:hover{opacity:.9;transform:scale(1.01)}
+.btn-draw:disabled{background:var(--surface2);color:var(--ink-dim);cursor:not-allowed;transform:none;box-shadow:none}
+/* stage */
+.qstage{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:30px;margin-bottom:18px;min-height:90px}
+.qstage.hasq{border-color:rgba(74,158,255,.3);box-shadow:0 0 0 4px rgba(74,158,255,.05),0 0 40px rgba(74,158,255,.12);animation:bIn .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes bIn{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:none}}
+.qlbl{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.qlbl::after{content:'';flex:1;height:1px;background:rgba(74,158,255,.2)}
+.qtxt{font-size:16px;font-weight:400;line-height:1.65;color:var(--ink);margin-bottom:22px}
+.qempty{text-align:center;color:var(--ink-dim);font-size:14px;font-style:italic;padding:28px 0;font-weight:300}
+/* options */
+.ogrid{display:flex;flex-direction:column;gap:9px}
+.obtn{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r2);padding:13px 16px;display:flex;align-items:flex-start;gap:13px;cursor:pointer;transition:all .18s;text-align:left;width:100%;font-family:'DM Sans',sans-serif}
+.obtn:hover:not(:disabled){border-color:var(--accent);background:var(--accent-dim);transform:translateX(3px)}
+.obtn.sel{border-color:var(--accent);background:var(--accent-dim)}
+.obtn.cor{border-color:var(--green);background:var(--green-dim)}
+.obtn.wrg{border-color:var(--red);background:var(--red-dim);opacity:.65}
+.obtn:disabled{cursor:default}
+.okey{font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--accent);min-width:20px;flex-shrink:0;margin-top:2px}
+.obtn.cor .okey{color:var(--green)}
+.obtn.wrg .okey{color:var(--red)}
+.otxt{font-size:14px;color:var(--ink);line-height:1.55;font-weight:300}
+.obtn.sel .otxt,.obtn.cor .otxt{font-weight:400}
+/* feedback */
+.qfb{margin-top:13px;padding:11px 15px;border-radius:8px;font-size:14px;font-weight:500;display:none}
+.qfb.show{display:flex;align-items:center;gap:7px}
+.qfb.cfb{background:var(--green-dim);border:1px solid rgba(62,207,142,.3);color:var(--green)}
+.qfb.wfb{background:var(--red-dim);border:1px solid rgba(255,107,107,.3);color:var(--red)}
+/* confirm */
+.btn-cfm{margin-top:14px;background:var(--accent);color:#000;border:none;border-radius:8px;padding:11px 22px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .18s;display:none}
+.btn-cfm.show{display:inline-flex;align-items:center;gap:6px}
+.btn-cfm:hover{opacity:.85}
+/* moderator */
+.mbtn{background:transparent;border:1px solid rgba(245,200,66,.3);color:var(--gold);border-radius:8px;padding:9px 17px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;margin-bottom:22px}
+.mbtn:hover{background:var(--gold);color:#000}
+.mpanel{background:var(--surface);border:1px solid rgba(245,200,66,.2);border-radius:var(--r2);padding:18px 22px;margin-bottom:22px;display:none;animation:fadeUp .3s ease}
+.mpanel.show{display:block}
+.mpanel h4{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px}
+.ki{background:var(--surface2);border-radius:6px;padding:7px 11px;font-size:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border)}
+.ki .kiq{color:var(--ink-muted);font-weight:300}
+.ki .kia{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:var(--gold)}
+/* section titles */
+.stitle{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-dim);margin-bottom:11px;display:flex;align-items:center;gap:9px}
+.stitle::after{content:'';flex:1;height:1px;background:var(--border)}
+/* used */
+.ulist{display:flex;flex-direction:column;gap:7px;margin-bottom:26px}
+.uitem{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-size:13px;color:var(--ink-dim);font-weight:300;display:flex;gap:9px;align-items:flex-start;text-decoration:line-through;opacity:.5}
+.unum{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--red);flex-shrink:0;margin-top:2px}
+/* available */
+.alist{display:flex;flex-direction:column;gap:6px;margin-bottom:30px}
+.aitem{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 13px;font-size:13px;color:var(--ink-muted);font-weight:300}
+/* actions */
+.gacts{display:flex;gap:9px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)}
+.bghost{background:transparent;border:1px solid var(--border);color:var(--ink-muted);border-radius:8px;padding:10px 17px;font-size:13px;font-weight:500;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:6px}
+.bghost:hover{border-color:var(--border2);color:var(--ink)}
+/* all done */
+.adone{text-align:center;padding:44px 20px;background:var(--surface);border-radius:var(--r);border:1px dashed var(--border)}
+.adone .dico{font-size:44px;margin-bottom:12px}
+.adone h3{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;margin-bottom:7px}
+.adone p{font-size:13px;color:var(--ink-muted);font-weight:300}
+/* toast */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#000;border-radius:50px;padding:11px 22px;font-size:13px;font-weight:600;transition:transform .35s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+/* responsive */
+@media(max-width:600px){.hdr{padding:11px 14px}.mwrap,.gwrap{padding:24px 13px 80px}.gcard{padding:18px}.qstage{padding:18px}.qtxt{font-size:15px}.kgrid{grid-template-columns:repeat(2,1fr)}.btn-draw{font-size:15px;padding:14px}}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="logo">ER</div>
+    <div><h1>Escape Room Documental</h1><p>INVIMA — Evaluación por grupos de trabajo</p></div>
+  </div>
+  <button class="btn-share" onclick="shareGame()">🔗 Compartir juego</button>
+</header>
+<div class="toast" id="toast"></div>
+
+<!-- MENU -->
+<div id="scr-menu" class="screen active">
+  <div class="mwrap">
+    <div class="mint">
+      <div class="badge">⬡ Juego evaluativo</div>
+      <h2>Selecciona tu<br>grupo de trabajo</h2>
+      <p>Preguntas aleatorias sin repetición por sesión. El juego se reinicia al recargar la página.</p>
+    </div>
+    <div class="roombox">
+      <h3>Modo multijugador en tiempo real</h3>
+      <p>Crea una sala y comparte el enlace. Cada participante juega con su propio banco de preguntas; las preguntas usadas no se eliminan para los demás.</p>
+      <div class="roomrow">
+        <button class="rbtn" onclick="createRoom()">Crear sala</button>
+        <input class="roominp" id="room-code-input" maxlength="8" placeholder="Código de sala">
+        <button class="rbtn alt" onclick="joinRoomInput()">Unirse</button>
+      </div>
+      <div class="roomstatus" id="room-status">Modo local: el juego funciona en este equipo, pero no sincroniza con otros dispositivos.</div>
+    </div>
+    <div class="ggrid" id="ggrid"></div>
+  </div>
+</div>
+
+<!-- GROUP -->
+<div id="scr-grp" class="screen">
+  <div class="gwrap">
+    <div class="gnav"><button class="btn-back" onclick="goMenu()">← Menú principal</button></div>
+    <div class="ghdr">
+      <div class="gey" id="gey">Estación</div>
+      <h2 id="gname">Grupo</h2>
+      <p id="gdesc">Descripción</p>
+    </div>
+    <div class="sbar">
+      <div class="sv cor"><div class="sl">Correctas</div><div class="sn" id="sc-cor">0</div></div>
+      <div class="sv ans"><div class="sl">Respondidas</div><div class="sn" id="sc-ans">0</div></div>
+    </div>
+    <div class="srow">
+      <div class="schip av">Disponibles: <strong id="st-av">0</strong></div>
+      <div class="schip us">Utilizadas: <strong id="st-us">0</strong></div>
+    </div>
+    <button class="btn-draw" id="btn-draw" onclick="draw()">🎲 Sacar pregunta aleatoria</button>
+    <div class="qstage" id="qstage"><p class="qempty">Haz clic en <strong>Sacar pregunta aleatoria</strong> para comenzar.</p></div>
+    <button class="btn-cfm" id="btn-cfm" onclick="confirm()">Confirmar respuesta ✓</button>
+    <button class="mbtn" onclick="toggleMod()">🔑 Ver clave del moderador</button>
+    <div class="mpanel" id="mpanel"><h4>🔑 Clave del moderador</h4><div class="kgrid" id="kgrid"></div></div>
+    <div id="uwrap" style="display:none"><div class="stitle">Preguntas ya utilizadas</div><div class="ulist" id="ulist"></div></div>
+    <div class="stitle">Preguntas disponibles</div>
+    <div class="alist" id="alist"></div>
+    <div class="gacts">
+      <button class="bghost" onclick="goMenu()">← Volver al menú</button>
+      <button class="bghost" onclick="resetGrp()">↺ Reiniciar grupo</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script>
+const G=[
+{id:"tecnico",nombre:"Grupo Técnico",ey:"Estación 1",ico:"🔬",cc:"#4a9eff",cg:"linear-gradient(135deg,#4a9eff,#7b2fff)",cib:"rgba(74,158,255,.12)",desc:"Evalúa criterios técnicos, ficha técnica, manual de usuario, compatibilidad y trazabilidad.",
+q:[
+{p:"En el expediente aparece una ficha técnica con una referencia, pero el manual de usuario relaciona otra referencia diferente. ¿Qué debe hacerse?",o:{A:"Priorizar la ficha técnica porque describe las especificaciones del producto y dejar el manual como documento complementario.",B:"Priorizar el manual de usuario porque contiene las instrucciones de uso y solicitar actualización posterior de la ficha técnica.",C:"Identificar la inconsistencia documental, retener la aprobación técnica y solicitar aclaración formal al fabricante o importador.",D:"Aceptar ambos documentos si el nombre comercial coincide y dejar observación en el expediente técnico."},r:"C"},
+{p:"Un equipo biomédico se presenta como nuevo, pero no tiene certificado de origen ni trazabilidad del fabricante. ¿Cuál es el principal riesgo?",o:{A:"Que el equipo no cuente con garantía comercial suficiente para cubrir fallas tempranas.",B:"Que no pueda demostrarse procedencia, autenticidad, condición técnica ni respaldo del fabricante.",C:"Que el equipo requiera mantenimiento preventivo antes de ser instalado.",D:"Que el equipo deba ingresar primero como muestra técnica antes de su comercialización."},r:"B"},
+{p:"La ficha técnica indica que el producto es estéril, pero no anexa método de esterilización ni condiciones de conservación. ¿Qué observación corresponde?",o:{A:"Solicitar únicamente certificado de análisis del lote, porque allí debe constar la condición de esterilidad.",B:"Solicitar soporte de esterilización, vida útil, condiciones de almacenamiento y evidencia del fabricante.",C:"Aceptar la condición de esterilidad si el rotulado y el empaque primario declaran producto estéril.",D:"Autorizar recepción condicionada y dejar pendiente la validación del método de esterilización."},r:"B"},
+{p:"En el rotulado aparece 'uso único', pero el área usuaria solicita reprocesarlo. ¿Qué debe hacerse?",o:{A:"Permitir reproceso solo si el área usuaria documenta limpieza, desinfección y esterilización.",B:"Solicitar concepto del proveedor para definir si puede reprocesarse bajo responsabilidad institucional.",C:"Respetar la indicación de uso único del fabricante y no autorizar reproceso como parte del uso seguro.",D:"Permitir reproceso excepcional si no hay disponibilidad de producto sustituto y se controla el riesgo."},r:"C"},
+{p:"Un dispositivo tiene manual en inglés, pero será usado por personal que requiere instrucciones en español. ¿Qué riesgo genera?",o:{A:"Riesgo de interpretación incorrecta de advertencias, contraindicaciones, instalación y uso seguro.",B:"Riesgo documental moderado, siempre que la ficha técnica esté disponible en español.",C:"Riesgo principalmente administrativo, porque el manual no modifica las especificaciones técnicas.",D:"Riesgo bajo si el proveedor ofrece capacitación verbal sobre el funcionamiento del dispositivo."},r:"A"},
+{p:"El fabricante declara vida útil de cinco años, pero el proveedor ofrece garantía de seis meses. ¿Cuál afirmación es más precisa?",o:{A:"La garantía define el tiempo máximo de uso seguro del producto en condiciones normales.",B:"La vida útil y la garantía son equivalentes si ambas fueron declaradas por el proveedor.",C:"La vida útil corresponde al tiempo esperado de desempeño; la garantía es un compromiso comercial.",D:"La vida útil solo aplica a equipos biomédicos y la garantía solo a insumos o accesorios."},r:"C"},
+{p:"El producto requiere accesorios específicos, pero no están incluidos en la ficha técnica. ¿Qué alerta técnica se genera?",o:{A:"Posible uso incompleto, inseguro o incompatible por falta de componentes necesarios para el funcionamiento.",B:"Posible desviación documental menor, siempre que los accesorios puedan adquirirse por separado.",C:"Posible inconsistencia comercial, pero no técnica, si el dispositivo principal está correctamente identificado.",D:"Posible requerimiento de actualización de inventario, sin afectar la aprobación técnica del producto."},r:"A"},
+{p:"En una hoja de vida de equipo biomédico hay mantenimiento preventivo, pero no calibración aunque mide variables críticas. ¿Qué falta?",o:{A:"Evidencia de mantenimiento correctivo y autorización del área usuaria.",B:"Evidencia de calibración trazable, cuando la medición impacta desempeño, seguridad o exactitud.",C:"Certificación del proveedor indicando que el mantenimiento reemplaza la calibración.",D:"Registro de limpieza y desinfección posterior al mantenimiento preventivo."},r:"B"},
+{p:"Un equipo no tiene placa legible de identificación, serial o modelo. ¿Cuál es el impacto?",o:{A:"Limita la validación de garantía, pero no afecta la operación si el equipo funciona correctamente.",B:"Compromete trazabilidad, identificación, mantenimiento, control documental y tecnovigilancia.",C:"Obliga a crear un serial interno temporal para permitir ingreso al inventario.",D:"Genera una observación documental, pero puede aceptarse si existe factura del proveedor."},r:"B"},
+{p:"Un certificado de calibración no identifica patrón utilizado ni entidad emisora. ¿Qué debilidad presenta?",o:{A:"No permite verificar trazabilidad metrológica, confiabilidad del resultado ni competencia del emisor.",B:"No afecta la calibración si el certificado contiene fecha, resultado y firma del responsable.",C:"Requiere solamente complementar el certificado con la hoja de vida del equipo biomédico.",D:"Es aceptable si el proveedor declara que el equipo fue calibrado antes de la entrega."},r:"A"},
+{p:"Un dispositivo se declara compatible con un equipo, pero no hay carta del fabricante. ¿Qué riesgo existe?",o:{A:"Riesgo de incompatibilidad técnica, falla funcional, daño del equipo o uso fuera de especificación.",B:"Riesgo regulatorio únicamente si el accesorio no está incluido en el registro sanitario.",C:"Riesgo documental bajo si el proveedor tiene experiencia previa usando esa combinación.",D:"Riesgo comercial, porque podría aumentar la necesidad de soporte técnico."},r:"A"},
+{p:"La ficha técnica exige almacenamiento entre 15°C y 30°C, pero se conserva sin control de temperatura. ¿Qué debe indicarse?",o:{A:"Que el producto puede liberarse si durante la inspección física no presenta alteraciones visibles.",B:"Que existe incumplimiento de condiciones definidas por fabricante y se debe evaluar impacto.",C:"Que debe trasladarse a una zona controlada y liberarse una vez se estabilice la temperatura.",D:"Que la condición solo aplica durante transporte, no durante almacenamiento temporal."},r:"B"},
+{p:"El manual recomienda mantenimiento cada seis meses, pero el proveedor propone hacerlo cada año. ¿Qué criterio prevalece?",o:{A:"El criterio del proveedor, si asume por escrito la garantía y soporte técnico.",B:"El criterio institucional, si el equipo se usa con baja frecuencia.",C:"El criterio definido por el fabricante en el manual técnico o documentación oficial vigente.",D:"El criterio del área usuaria, según carga operativa y disponibilidad del equipo."},r:"C"},
+{p:"Un insumo cambia de material, pero conserva el mismo nombre comercial. ¿Qué debe hacerse?",o:{A:"Aceptarlo si la referencia, empaque y proveedor no han cambiado.",B:"Evaluar impacto técnico, uso previsto, compatibilidad, seguridad, biocompatibilidad si aplica y soportes.",C:"Validar únicamente si el cambio de material modifica la clasificación de riesgo del producto.",D:"Solicitar actualización de ficha técnica, pero mantener aprobación si el nombre comercial coincide."},r:"B"},
+{p:"El proveedor entrega una versión antigua del manual y el fabricante tiene una versión reciente. ¿Qué se debe solicitar?",o:{A:"La versión vigente controlada del manual emitida o confirmada por el fabricante.",B:"Una carta del proveedor indicando que ambas versiones son funcionalmente equivalentes.",C:"El manual antiguo firmado por el área técnica para mantener trazabilidad documental.",D:"Una comparación entre versiones realizada por el proveedor o distribuidor local."},r:"A"},
+{p:"Un producto se presenta como equivalente, pero cambia dimensiones, material y uso previsto. ¿Por qué no puede asumirse equivalencia automática?",o:{A:"Porque los cambios pueden modificar desempeño, seguridad, compatibilidad y alcance del uso autorizado.",B:"Porque toda equivalencia debe aprobarse únicamente desde el área de compras.",C:"Porque la equivalencia solo aplica cuando cambia el fabricante, no cuando cambia el uso previsto.",D:"Porque las dimensiones solo pueden modificarse si el registro sanitario está vencido."},r:"A"},
+{p:"No hay declaración del fabricante sobre uso previsto, población usuaria o condiciones de operación. ¿Por qué es crítico?",o:{A:"Porque define alcance de uso, límites de seguridad, población objetivo y criterios de evaluación técnica.",B:"Porque reemplaza el manual de usuario cuando este no está disponible en español.",C:"Porque permite confirmar únicamente si el producto requiere mantenimiento preventivo.",D:"Porque sirve para justificar la compra, pero no condiciona la aprobación técnica."},r:"A"},
+{p:"Un equipo requiere software, pero no se documenta versión, licencia ni actualizaciones. ¿Qué riesgo existe?",o:{A:"Riesgo funcional, de compatibilidad, trazabilidad, ciberseguridad y uso de software no controlado.",B:"Riesgo menor, siempre que el equipo encienda y complete prueba básica de funcionamiento.",C:"Riesgo exclusivamente administrativo por falta de soporte de instalación.",D:"Riesgo comercial relacionado con costos futuros de actualización."},r:"A"},
+{p:"El empaque secundario está deteriorado y no permite leer lote ni vencimiento. ¿Debe liberarse?",o:{A:"Sí, si el empaque primario está íntegro y el proveedor confirma lote por correo.",B:"No, porque se compromete trazabilidad, verificación de vencimiento y control documental.",C:"Sí, con liberación condicionada y registro fotográfico del estado de recepción.",D:"No, salvo que el producto sea de baja clasificación de riesgo."},r:"B"},
+{p:"Un reporte de falla dice 'mal uso', pero no incluye análisis técnico ni evidencia. ¿Por qué el cierre es débil?",o:{A:"Porque no demuestra causa probable, análisis técnico, evidencia objetiva ni soporte de la conclusión.",B:"Porque debería incluir únicamente aprobación del área usuaria antes del cierre.",C:"Porque falta concepto de registros sanitarios para validar la clasificación del evento.",D:"Porque todo reporte de falla debe cerrarse únicamente por el fabricante."},r:"A"}
+]},
+{id:"investigacion",nombre:"Grupo de Investigación",ey:"Estación 2",ico:"📚",cc:"#3ecf8e",cg:"linear-gradient(135deg,#3ecf8e,#00b4d8)",cib:"rgba(62,207,142,.12)",desc:"Evalúa manejo de proveedores, análisis de información técnica, verificación de fuentes y soporte documental.",
+q:[
+{p:"Se identifica un proveedor nuevo sin evidencia de ser fabricante, importador o distribuidor autorizado. ¿Qué documentos solicitarías?",o:{A:"Cotización, catálogo comercial, ficha técnica y promesa de disponibilidad del producto.",B:"Carta de autorización, soporte legal, documentación técnica, respaldo del fabricante y trazabilidad comercial.",C:"Certificado de cámara de comercio, lista de precios y evidencia de experiencia comercial.",D:"Registro sanitario, orden de compra y contrato de distribución firmado por el cliente."},r:"B"},
+{p:"Un producto aparece en la página comercial del proveedor, pero no hay información técnica del fabricante. ¿Qué riesgo existe?",o:{A:"Tomar decisiones con información promocional no verificable ni respaldada por documentación técnica.",B:"Que el proveedor no tenga inventario suficiente para atender solicitudes futuras.",C:"Que el producto requiera validación regulatoria antes de solicitar cotización formal.",D:"Que el área técnica deba complementar la información con inspección visual de muestra."},r:"A"},
+{p:"Dos proveedores ofrecen el mismo dispositivo; uno entrega documentación completa y otro solo menor precio. ¿Cuál recomendarías?",o:{A:"El de menor precio, siempre que el producto físico coincida con la necesidad del usuario.",B:"El que garantice soporte técnico, trazabilidad documental, respaldo regulatorio y autorización verificable.",C:"El que pueda entregar más rápido, dejando la revisión documental para una etapa posterior.",D:"El que tenga mejores condiciones comerciales, siempre que firme compromiso de documentación futura."},r:"B"},
+{p:"Un proveedor afirma que tiene 'aprobación internacional', pero no entrega certificados. ¿Qué se debe hacer?",o:{A:"Registrar la afirmación como antecedente favorable y continuar con evaluación técnica.",B:"Solicitar evidencia verificable, certificados, autorizaciones oficiales o documentos emitidos por autoridad competente.",C:"Aceptar la afirmación si el proveedor también presenta ficha técnica y manual de usuario.",D:"Remitir a registros sanitarios para que determine si la afirmación internacional es suficiente."},r:"B"},
+{p:"Comercial solicita un producto urgente sin justificar necesidad técnica. ¿Qué debe pedir investigación?",o:{A:"Cantidad requerida, precio objetivo, fecha límite de entrega y proveedor sugerido.",B:"Necesidad, uso previsto, usuario final, características técnicas críticas y justificación de incorporación.",C:"Registro sanitario, permiso de comercialización y autorización del importador.",D:"Evidencia de compras previas, comparación de precios y disponibilidad en inventario."},r:"B"},
+{p:"Se encuentran alertas sanitarias en otros países sobre el producto. ¿Qué debe hacerse?",o:{A:"Descartar el producto automáticamente por antecedente de riesgo sanitario internacional.",B:"Reportar el hallazgo para análisis técnico, regulatorio y postmercado antes de recomendar.",C:"Continuar la investigación si la alerta no fue emitida por la autoridad sanitaria colombiana.",D:"Solicitar al proveedor una carta donde indique que la alerta no aplica al lote ofrecido."},r:"B"},
+{p:"Tres productos tienen igual uso previsto, pero diferente clasificación de riesgo. ¿Qué debe comparar investigación?",o:{A:"Precio, disponibilidad, tiempo de entrega, garantía y experiencia comercial del proveedor.",B:"Uso previsto, clasificación de riesgo, fabricante, soporte documental, requisitos regulatorios y desempeño.",C:"Nombre comercial, presentación, empaque, país de origen y condiciones de negociación.",D:"Opiniones de usuarios, soporte postventa y capacidad logística del distribuidor."},r:"B"},
+{p:"Un producto tiene buena reputación comercial, pero fabricante poco verificable. ¿Qué alerta se genera?",o:{A:"Posible falta de trazabilidad, respaldo técnico, soporte postmercado y responsabilidad del fabricante.",B:"Posible oportunidad de compra, siempre que el proveedor local asuma la garantía.",C:"Posible necesidad de evaluación por muestra antes de solicitar documentos regulatorios.",D:"Posible desviación documental menor si el producto tiene aceptación en el mercado."},r:"A"},
+{p:"El proveedor entrega muestras físicas sin expediente documental. ¿Qué debe hacerse?",o:{A:"Evaluar desempeño funcional de las muestras y dejar pendiente la documentación.",B:"Limitar la evaluación hasta contar con ficha técnica, manual, soportes regulatorios y trazabilidad.",C:"Enviar muestras al área usuaria y solicitar concepto práctico de aceptación.",D:"Aceptar la muestra como evidencia preliminar si coincide con la necesidad técnica."},r:"B"},
+{p:"El nombre comercial cambia según el país. ¿Cómo verificar que es el mismo producto?",o:{A:"Comparando fotografía, empaque, proveedor, precio y descripción comercial.",B:"Confirmando fabricante, referencia, modelo, composición, uso previsto y documentos oficiales.",C:"Solicitando declaración del distribuidor local sobre equivalencia comercial.",D:"Verificando que el producto tenga la misma finalidad general en todos los países."},r:"B"},
+{p:"Si no hay carta de autorización del fabricante, ¿qué riesgo existe?",o:{A:"Falta de respaldo sobre distribución, garantía, soporte técnico, autenticidad y trazabilidad.",B:"Falta de claridad sobre precio, entrega, condiciones de pago y negociación comercial.",C:"Falta de evidencia de que el proveedor tenga inventario suficiente en Colombia.",D:"Falta de soporte para clasificar el producto dentro del sistema de inventario."},r:"A"},
+{p:"Un producto innovador no tiene experiencia de uso en instituciones de salud. ¿Qué información buscar?",o:{A:"Evidencia de desempeño, reportes de uso, referencias institucionales, alertas, soporte y literatura técnica.",B:"Certificado comercial del proveedor, promesa de capacitación y condiciones de garantía.",C:"Fotografías, videos demostrativos, reseñas de usuarios y disponibilidad de muestras.",D:"Concepto del área comercial sobre necesidad de mercado y oportunidad de venta."},r:"A"},
+{p:"Un equipo es económico, pero no tiene soporte técnico local ni repuestos. ¿Cómo afecta la recomendación?",o:{A:"La fortalece si el costo inicial compensa el riesgo de mantenimiento.",B:"La debilita por riesgo de indisponibilidad, fallas sin soporte y afectación de continuidad operativa.",C:"No afecta si el fabricante ofrece garantía internacional durante la vida útil.",D:"Requiere solo que el proveedor firme compromiso de respuesta ante fallas."},r:"B"},
+{p:"El proveedor ofrece capacitación sin temario ni evidencia. ¿Qué pedirías?",o:{A:"Programa, objetivos, responsable, duración, contenido, metodología y registro de asistencia.",B:"Carta de compromiso del proveedor indicando que capacitará al usuario final.",C:"Video de capacitación y soporte telefónico durante la primera instalación.",D:"Cronograma de entrega, contacto técnico y manual de usuario actualizado."},r:"A"},
+{p:"Hay diferencias entre catálogo, ficha técnica y cotización. ¿Qué debe hacer investigación?",o:{A:"Escoger la información de ficha técnica porque tiene mayor valor técnico.",B:"Solicitar aclaración formal y consolidar información antes de remitir a revisión técnica o regulatoria.",C:"Enviar la carpeta a registros sanitarios para que defina cuál documento prevalece.",D:"Continuar si las diferencias no modifican precio, disponibilidad o uso general."},r:"B"},
+{p:"El producto requiere condiciones especiales de transporte, pero no hay evidencia logística. ¿Qué riesgo debe documentarse?",o:{A:"Pérdida de calidad, alteración del desempeño o incumplimiento de condiciones del fabricante.",B:"Incremento de costo logístico y necesidad de negociar transporte especializado.",C:"Posible retraso en la entrega, pero sin impacto técnico si el empaque está íntegro.",D:"Necesidad de asignar responsabilidad al transportador mediante acta de entrega."},r:"A"},
+{p:"Si el producto requiere registro sanitario o permiso de comercialización, ¿por qué investigación no debe recomendar compra sin validación?",o:{A:"Porque podría adquirirse un producto no autorizado, no amparado o no comercializable legalmente.",B:"Porque la validación regulatoria solo se realiza después de generar orden de compra.",C:"Porque investigación no puede solicitar documentos sanitarios directamente al proveedor.",D:"Porque el proveedor debe entregar primero muestras para confirmar la necesidad técnica."},r:"A"},
+{p:"El proveedor ofrece 'producto homologado', pero no define criterios. ¿Qué debe aclararse?",o:{A:"Producto de referencia, criterios de comparación, alcance de homologación y soportes técnicos.",B:"Precio homologado, condiciones comerciales, garantía y disponibilidad de inventario.",C:"Si la homologación aplica para compra, almacenamiento, despacho o postmercado.",D:"Si el producto homologado conserva el mismo nombre comercial y presentación."},r:"A"},
+{p:"Hay varios distribuidores del fabricante. ¿Cómo validar cuál puede comercializar en Colombia?",o:{A:"Comparando trayectoria, precios, tiempos de entrega y experiencia en el sector salud.",B:"Solicitando autorización del fabricante y verificando representación, distribución o importación autorizada.",C:"Revisando cuál tiene documentación más completa y mejor disponibilidad de producto.",D:"Confirmando que el distribuidor tenga registro sanitario vigente a su nombre."},r:"B"},
+{p:"El informe concluye 'producto apto', pero no tiene fuentes ni soportes. ¿Por qué no es suficiente?",o:{A:"Porque no permite verificar trazabilidad del análisis, criterios de comparación ni sustento de decisión.",B:"Porque la aptitud solo puede declararse después de la aprobación de registros sanitarios.",C:"Porque todo informe debe incluir mínimo tres cotizaciones comparativas.",D:"Porque investigación solo debe emitir conceptos descriptivos, no conclusiones de aptitud."},r:"A"}
+]},
+{id:"registros",nombre:"Grupo de Registros Sanitarios",ey:"Estación 3",ico:"📋",cc:"#c084fc",cg:"linear-gradient(135deg,#c084fc,#e879f9)",cib:"rgba(192,132,252,.12)",desc:"Evalúa tramitología, expedientes, clasificación de dispositivos y control de registros sanitarios.",
+q:[
+{p:"El registro sanitario está vigente, pero el titular no coincide con el proveedor. ¿Qué revisarías?",o:{A:"La trazabilidad entre titular, fabricante, importador, distribuidor y autorización de comercialización.",B:"La vigencia del registro y la coincidencia del nombre comercial con el producto físico.",C:"La factura del proveedor y la declaración de que el producto corresponde al registro.",D:"La clasificación de riesgo y el código interno asignado en el sistema de inventario."},r:"A"},
+{p:"El registro relaciona un fabricante, pero la etiqueta menciona otro. ¿Qué riesgo existe?",o:{A:"Inconsistencia regulatoria frente al fabricante autorizado o amparado en el expediente.",B:"Diferencia documental menor, si ambos fabricantes pertenecen al mismo grupo empresarial.",C:"Necesidad de actualizar únicamente el rotulado antes de despacho.",D:"Riesgo comercial por posible confusión entre fabricante y distribuidor."},r:"A"},
+{p:"La referencia física no aparece en el registro ni anexos. ¿Puede comercializarse?",o:{A:"Sí, si el proveedor entrega carta indicando equivalencia técnica con la referencia aprobada.",B:"No, hasta confirmar que la referencia está amparada por el registro o soporte aplicable.",C:"Sí, si el uso previsto, nombre comercial y fabricante coinciden con el registro.",D:"No, salvo que el área técnica certifique que no hay diferencias de desempeño."},r:"B"},
+{p:"El registro no incluye la presentación comercial que se quiere despachar. ¿Qué observación corresponde?",o:{A:"La presentación debe estar autorizada, incluida o soportada en el expediente correspondiente.",B:"La presentación puede variar si el producto conserva la misma referencia y fabricante.",C:"La presentación es competencia de despacho, no de registros sanitarios.",D:"Se permite si el proveedor garantiza que no cambia la condición sanitaria del producto."},r:"A"},
+{p:"El rotulado tiene un uso previsto diferente al autorizado. ¿Qué riesgo genera?",o:{A:"Comercialización o promoción para una indicación no autorizada o no soportada.",B:"Diferencia técnica aceptable si el uso previsto es clínicamente similar.",C:"Observación menor si el manual de usuario contiene el uso correcto.",D:"Riesgo principalmente comercial por confusión del usuario final."},r:"A"},
+{p:"Un producto clase IIb es presentado como clase I. ¿Qué debe revisar registros?",o:{A:"Clasificación de riesgo, uso previsto, reglas de clasificación y documentación sanitaria aplicable.",B:"Si el proveedor puede asumir responsabilidad por la clasificación declarada.",C:"Si el producto tiene bajo volumen de venta para aceptar clasificación simplificada.",D:"Si el área técnica considera que el riesgo real del producto es bajo."},r:"A"},
+{p:"Un equipo requiere permiso de comercialización, pero solo entregan ficha técnica y factura. ¿Qué falta?",o:{A:"Permiso de comercialización o soporte regulatorio aplicable para el equipo biomédico.",B:"Concepto técnico de aceptación del área usuaria antes del ingreso.",C:"Certificado de garantía, hoja de vida y programa de mantenimiento.",D:"Evidencia de importación, factura y remisión del proveedor."},r:"A"},
+{p:"El número de registro del empaque tiene un dígito diferente al documento oficial. ¿Qué hacer?",o:{A:"Registrar observación y permitir despacho si el nombre comercial y fabricante coinciden.",B:"Bloquear o retener hasta aclarar la inconsistencia documental del número de registro.",C:"Solicitar carta del proveedor y despachar bajo aprobación condicionada.",D:"Corregir el número en el sistema interno y conservar evidencia fotográfica."},r:"B"},
+{p:"El registro sanitario está próximo a vencer y hay inventario. ¿Qué control implementar?",o:{A:"Control de vigencia, revisión antes de despacho y bloqueo preventivo si aplica.",B:"Despacho prioritario del inventario para evitar pérdida económica.",C:"Autorización comercial condicionada a la renovación futura del registro.",D:"Control únicamente sobre nuevas compras, no sobre inventario existente."},r:"A"},
+{p:"Hay modificación de fabricante, importador o presentación sin soporte aprobado. ¿Qué riesgo existe?",o:{A:"Comercializar un producto bajo condiciones no autorizadas o no actualizadas en el expediente.",B:"Retraso documental sin impacto sanitario si el producto conserva el mismo uso previsto.",C:"Necesidad de actualizar únicamente documentos internos de trazabilidad.",D:"Riesgo limitado al proveedor, porque la empresa solo realiza distribución."},r:"A"},
+{p:"El proveedor dice que 'no requiere registro sanitario' y solo entrega carta propia. ¿Qué validar?",o:{A:"Sustento normativo, clasificación del producto y aplicabilidad real de no requerimiento.",B:"Firma del representante legal y cámara de comercio del proveedor.",C:"Si el producto puede ingresar como insumo no regulado.",D:"Si el área técnica acepta el producto sin registro sanitario."},r:"A"},
+{p:"Hay certificado de venta libre extranjero, pero no registro colombiano. ¿Autoriza comercialización en Colombia?",o:{A:"Sí, si el certificado proviene de una autoridad sanitaria reconocida.",B:"No necesariamente; debe verificarse el requisito sanitario aplicable en Colombia.",C:"Sí, siempre que el producto tenga fabricante identificado y ficha técnica.",D:"No, salvo que el proveedor sea importador autorizado por el fabricante."},r:"B"},
+{p:"El importador del documento no coincide con quien importa actualmente. ¿Qué revisar?",o:{A:"Autorización, trazabilidad del importador y soporte regulatorio vigente aplicable.",B:"Únicamente factura, declaración de importación y documento de transporte.",C:"Si el producto fue importado antes del vencimiento del registro sanitario.",D:"Si el titular del registro autoriza verbalmente al nuevo importador."},r:"A"},
+{p:"El dispositivo incluye accesorios no listados en el registro. ¿Qué analizar?",o:{A:"Si los accesorios están amparados, requieren soporte independiente o modifican el alcance autorizado.",B:"Si los accesorios son indispensables o solo complementarios para el funcionamiento.",C:"Si los accesorios tienen bajo riesgo y pueden entregarse como elementos comerciales.",D:"Si el área técnica puede homologarlos con accesorios previamente aceptados."},r:"A"},
+{p:"El rotulado no incluye lote, serial, fabricante, importador o almacenamiento. ¿Qué podría existir?",o:{A:"Incumplimiento de requisitos de rotulado, trazabilidad e información mínima del producto.",B:"Falta documental menor si la información aparece en factura o ficha técnica.",C:"Error de empaque que puede corregirse con etiqueta interna de almacén.",D:"Desviación aceptable si el producto cuenta con registro sanitario vigente."},r:"A"},
+{p:"Comercial quiere promocionar un uso clínico específico no autorizado. ¿Qué debe advertir registros?",o:{A:"Que no debe promocionarse un uso no aprobado, no amparado o no soportado.",B:"Que puede promocionarse si se aclara que es recomendación del proveedor.",C:"Que el uso clínico puede validarse después con evidencia postmercado.",D:"Que la promoción es responsabilidad comercial, no regulatoria."},r:"A"},
+{p:"Documentos en idioma extranjero sin traducción ni claridad técnica. ¿Qué dificultad generan?",o:{A:"Dificultan evaluación regulatoria, comprensión técnica, trazabilidad y soporte del expediente.",B:"Generan solo retraso administrativo si el producto ya tiene registro sanitario vigente.",C:"Requieren validación por el área técnica, pero no afectan registros sanitarios.",D:"Pueden aceptarse si provienen directamente del fabricante extranjero."},r:"A"},
+{p:"En auditoría solicitan demostrar que un producto estaba autorizado en la fecha de venta. ¿Qué evidencias conservar?",o:{A:"Registro vigente a la fecha, anexos, soportes de titular/importador, rotulado y trazabilidad de venta.",B:"Factura, orden de compra, remisión y registro fotográfico del producto entregado.",C:"Certificado del proveedor, carta de autorización y ficha técnica vigente.",D:"Concepto técnico, aprobación comercial y soporte de despacho."},r:"A"},
+{p:"Se recibe producto con registro cancelado, suspendido o vencido. ¿Qué acción tomar?",o:{A:"Inmovilizar o bloquear inventario y escalar para análisis regulatorio antes de cualquier despacho.",B:"Separarlo físicamente y despacharlo solo si fue adquirido antes de la cancelación.",C:"Solicitar carta del proveedor y permitir venta condicionada hasta agotar inventario.",D:"Mantenerlo disponible si el producto no ha cambiado físicamente."},r:"A"},
+{p:"El producto entra al almacén antes de validación regulatoria. ¿Qué riesgo genera?",o:{A:"Disponibilidad indebida, despacho no autorizado, incumplimiento documental y falla de control.",B:"Riesgo bajo si el producto queda físicamente separado en zona de recepción.",C:"Riesgo principalmente operativo por acumulación de inventario pendiente.",D:"Riesgo comercial si el cliente solicita entrega antes de la liberación."},r:"A"}
+]},
+{id:"postmercado",nombre:"Grupo Postmercado / Tecnovigilancia",ey:"Estación 4",ico:"⚠️",cc:"#f97316",cg:"linear-gradient(135deg,#f97316,#ef4444)",cib:"rgba(249,115,22,.12)",desc:"Evalúa vigilancia poscomercialización, gestión de quejas, eventos adversos y acciones correctivas.",
+q:[
+{p:"Un cliente reporta falla sin lote, serial ni evidencia. ¿Qué debe solicitar postmercado?",o:{A:"Información del producto, lote/serial, fecha, descripción del evento, evidencia y condiciones de uso.",B:"Factura, nombre del cliente, área donde ocurrió la falla y solicitud de reposición.",C:"Declaración del usuario, confirmación del proveedor y autorización para cierre del caso.",D:"Registro fotográfico, devolución del producto y concepto técnico antes de abrir la queja."},r:"A"},
+{p:"Una queja menciona posible daño al paciente. ¿Por qué no debe tratarse como queja común?",o:{A:"Porque puede constituir incidente o evento adverso y activar ruta de tecnovigilancia.",B:"Porque debe ser gestionada exclusivamente por el fabricante del dispositivo.",C:"Porque toda queja con paciente debe cerrarse únicamente con reposición del producto.",D:"Porque debe pasar primero por despacho para verificar trazabilidad de entrega."},r:"A"},
+{p:"El usuario reporta 'el equipo no funcionó' sin detalles. ¿Qué debe preguntar postmercado?",o:{A:"Condiciones de uso, fecha, operador, mantenimiento, serial/lote, evidencia y consecuencia del evento.",B:"Si desea reposición, devolución, garantía o visita técnica.",C:"Si el producto fue almacenado correctamente y si conserva empaque original.",D:"Si el usuario siguió el manual y si acepta enviar el equipo al proveedor."},r:"A"},
+{p:"Hay tres quejas del mismo lote en un mes. ¿Qué debe activarse?",o:{A:"Análisis de tendencia, evaluación de lote, posible inmovilización y escalamiento técnico/regulatorio.",B:"Reposición preventiva a clientes y solicitud de nota crédito al proveedor.",C:"Revisión individual de cada caso sin relación entre ellos hasta confirmar falla.",D:"Notificación al fabricante únicamente después de recibir producto físico."},r:"A"},
+{p:"Cliente pide reposición, pero no diligencia formato de queja. ¿Qué hacer?",o:{A:"Explicar la necesidad de información mínima para trazabilidad, investigación y gestión formal.",B:"Realizar reposición y dejar la queja abierta hasta completar datos.",C:"Cerrar el caso por falta de colaboración del cliente y registrar observación.",D:"Escalar directamente a comercial para que decida si procede la reposición."},r:"A"},
+{p:"Técnica dice que no hay falla, pero no anexa evidencia. ¿Puede cerrarse la queja?",o:{A:"No, el cierre requiere soporte del análisis, evidencia y justificación de la conclusión.",B:"Sí, si el concepto técnico proviene de un responsable autorizado.",C:"Sí, si el cliente no reportó daño o consecuencia clínica.",D:"No, salvo que registros sanitarios indique que no es evento adverso."},r:"A"},
+{p:"Un evento adverso serio no se reporta al responsable de tecnovigilancia. ¿Qué riesgo existe?",o:{A:"Incumplimiento de la ruta de vigilancia, pérdida de oportunidad de control y riesgo para usuarios.",B:"Riesgo únicamente documental, si el caso se resuelve con reposición.",C:"Riesgo comercial por insatisfacción del cliente y posible pérdida de confianza.",D:"Riesgo operativo porque despacho no podrá inmovilizar el lote oportunamente."},r:"A"},
+{p:"El fabricante emite alerta internacional de seguridad. ¿Qué debe hacer postmercado?",o:{A:"Identificar productos afectados, revisar inventario/clientes, notificar áreas y activar acciones.",B:"Esperar pronunciamiento nacional antes de modificar inventario o contactar clientes.",C:"Informar únicamente a registros sanitarios para que determine si aplica en Colombia.",D:"Bloquear todos los productos del fabricante hasta obtener concepto técnico."},r:"A"},
+{p:"Un lote con quejas sigue disponible para despacho. ¿Qué recomendar?",o:{A:"Inmovilización o bloqueo preventivo mientras se completa investigación y evaluación de riesgo.",B:"Despacho controlado solo a clientes que acepten seguimiento posterior.",C:"Liberación condicionada si la falla no se ha confirmado técnicamente.",D:"Revisión caso a caso antes de cada despacho del lote comprometido."},r:"A"},
+{p:"Cliente devuelve dispositivo usado o contaminado. ¿Qué precaución debe documentarse?",o:{A:"Condiciones de bioseguridad, recepción, manipulación, embalaje, estado del producto y evidencia.",B:"Únicamente registro fotográfico y acta de recepción firmada por el cliente.",C:"Limpieza previa por parte de almacén antes de enviarlo al fabricante.",D:"Rechazo de la devolución hasta que el cliente lo entregue descontaminado."},r:"A"},
+{p:"El proveedor demora análisis de falla. ¿Cómo documentar seguimiento?",o:{A:"Fechas, comunicaciones, responsables, compromisos, vencimientos, respuestas y estado del caso.",B:"Registro de la última comunicación y nota indicando que el proveedor no ha respondido.",C:"Escalamiento a compras para presión comercial y cierre temporal del caso.",D:"Informe parcial al cliente y suspensión del caso hasta recibir respuesta técnica."},r:"A"},
+{p:"Una queja por llamada no quedó registrada. ¿Qué impacto tiene?",o:{A:"Pérdida de trazabilidad, debilidad en gestión postmercado y posible omisión de tendencia.",B:"Impacto bajo si la persona que recibió la llamada recuerda los detalles principales.",C:"Riesgo comercial, pero no de tecnovigilancia si no hubo daño reportado.",D:"Impacto administrativo corregible mediante correo posterior al cliente."},r:"A"},
+{p:"Producto vencido genera queja de desempeño. ¿Debe cerrarse automáticamente?",o:{A:"No; debe analizarse fecha de uso, trazabilidad, almacenamiento, causa probable y contexto.",B:"Sí; el vencimiento excluye responsabilidad técnica o postmercado del producto.",C:"No; debe reportarse siempre como evento adverso serio.",D:"Sí; solo debe dejarse registro de que el producto estaba vencido."},r:"A"},
+{p:"Queja sobre producto no vendido por la empresa, pero con mismo nombre. ¿Qué validar?",o:{A:"Trazabilidad de venta, lote, serial, proveedor, origen, factura y coincidencia con producto comercializado.",B:"Nombre comercial, imagen del producto y confirmación verbal del cliente.",C:"Si el fabricante es el mismo y si el producto está dentro del portafolio.",D:"Si el proveedor acepta revisar el caso aunque no sea producto vendido por la empresa."},r:"A"},
+{p:"Diferencia entre queja, incidente adverso y evento adverso. ¿Cuál es correcta?",o:{A:"La queja expresa inconformidad; incidente/evento adverso se relaciona con riesgo o daño asociado al dispositivo.",B:"La queja aplica a producto defectuoso; el evento adverso solo aplica si hay muerte.",C:"El incidente adverso es comercial y el evento adverso es técnico.",D:"La queja se gestiona por postmercado y el evento adverso solo por registros sanitarios."},r:"A"},
+{p:"Reporte menciona lesión o intervención médica adicional. ¿Qué ruta activar?",o:{A:"Escalamiento como posible evento/incidente adverso serio y gestión de tecnovigilancia.",B:"Reposición prioritaria y cierre condicionado a satisfacción del cliente.",C:"Revisión de despacho para confirmar si el producto fue entregado correctamente.",D:"Solicitud de análisis técnico antes de clasificar el caso."},r:"A"},
+{p:"El análisis concluye error de despacho. ¿Qué debe hacer postmercado?",o:{A:"Coordinar con despacho, documentar causa, acción correctiva, trazabilidad y comunicación al cliente.",B:"Cerrar el caso como error operativo y trasladarlo totalmente a despacho.",C:"Solicitar reposición y registrar la queja como no atribuible al producto.",D:"Informar al cliente que el evento no corresponde a falla técnica del dispositivo."},r:"A"},
+{p:"Fabricante solicita devolución de todas las unidades de un lote. ¿Qué áreas intervienen?",o:{A:"Postmercado, técnico, registros sanitarios, despacho/almacén, calidad y comercial según aplique.",B:"Postmercado y almacén únicamente, porque se trata de una devolución física.",C:"Registros sanitarios y comercial, porque implica comunicación externa.",D:"Técnico y proveedor, porque deben validar si el lote realmente presenta falla."},r:"A"},
+{p:"Informe de cierre sin causa probable ni acción tomada. ¿Por qué está incompleto?",o:{A:"Porque no demuestra análisis, gestión, decisión, acción implementada ni cierre efectivo.",B:"Porque debe contener firma del cliente antes de considerarse cerrado.",C:"Porque toda queja debe tener análisis del fabricante, incluso si es error de despacho.",D:"Porque no define si el caso fue queja, reclamo o evento adverso."},r:"A"},
+{p:"Aumentan quejas por rotulado confuso. ¿Qué acción corresponde?",o:{A:"Proponer acción correctiva/preventiva, revisar rotulado y escalar a fabricante/registros según aplique.",B:"Registrar la tendencia y esperar confirmación de falla del producto.",C:"Solicitar a despacho mayor explicación al cliente durante la entrega.",D:"Reetiquetar internamente los productos para evitar nuevas quejas."},r:"A"}
+]},
+{id:"despacho",nombre:"Grupo de Despacho / Almacenamiento",ey:"Estación 5",ico:"📦",cc:"#f5c842",cg:"linear-gradient(135deg,#f5c842,#f97316)",cib:"rgba(245,200,66,.12)",desc:"Evalúa cadena de frío, condiciones de almacenamiento, trazabilidad logística y control de despacho.",
+q:[
+{p:"Orden de despacho indica una referencia, pero el producto físico tiene otra similar. ¿Qué hacer?",o:{A:"No despachar hasta verificar referencia, registro, lote, autorización y coincidencia documental.",B:"Despachar si el nombre comercial, fabricante y uso previsto son equivalentes.",C:"Solicitar aprobación de comercial y dejar observación en la remisión.",D:"Cambiar la referencia en el sistema si el producto físico cumple la necesidad."},r:"A"},
+{p:"Producto disponible, pero bloqueado por registros sanitarios. ¿Puede despacharse?",o:{A:"No, debe mantenerse bloqueado hasta liberación formal del área competente.",B:"Sí, si el cliente acepta la entrega bajo responsabilidad documentada.",C:"Sí, si el producto tiene registro sanitario vigente y no está vencido.",D:"No, salvo que despacho confirme que el bloqueo fue por error administrativo."},r:"A"},
+{p:"Lote físico no coincide con lote del sistema. ¿Qué riesgo genera?",o:{A:"Falla de trazabilidad, despacho incorrecto y dificultad ante quejas, alertas o retiros.",B:"Riesgo documental moderado que puede corregirse después de la entrega.",C:"Riesgo bajo si el producto corresponde a la misma referencia y vencimiento.",D:"Riesgo comercial por posible reclamo del cliente al recibir el producto."},r:"A"},
+{p:"Producto requiere 2°C a 8°C, pero no hay registro de temperatura. ¿Qué falta?",o:{A:"Evidencia objetiva de cumplimiento de condiciones de almacenamiento definidas por fabricante.",B:"Certificación del proveedor indicando que el producto tolera excursiones térmicas.",C:"Registro fotográfico del refrigerador y firma del responsable de almacén.",D:"Verificación de que el producto aún no ha superado su fecha de vencimiento."},r:"A"},
+{p:"Empaque deteriorado no permite leer fecha de vencimiento. ¿Debe despacharse?",o:{A:"No, porque no se puede verificar información crítica de seguridad, trazabilidad y vigencia.",B:"Sí, si el sistema interno tiene registrado el vencimiento del lote.",C:"Sí, con aprobación de registros sanitarios y evidencia fotográfica.",D:"No, salvo que el empaque primario esté íntegro y legible."},r:"A"},
+{p:"Pedido incluye productos con diferentes condiciones de almacenamiento. ¿Cómo alistar?",o:{A:"Separando, embalando y conservando cada producto según condiciones del fabricante.",B:"En una sola unidad logística, si todos pertenecen al mismo cliente y pedido.",C:"Priorizando la condición más exigente para todos los productos del despacho.",D:"Clasificando por referencia, lote y fecha de vencimiento, sin mezclar presentaciones."},r:"A"},
+{p:"Cliente pide omitir revisión de lote y vencimiento por urgencia. ¿Qué responder?",o:{A:"Que no puede omitirse la verificación documental, sanitaria y de trazabilidad.",B:"Que puede hacerse si el cliente acepta por escrito la responsabilidad.",C:"Que se realiza revisión posterior a la entrega para no retrasar el despacho.",D:"Que solo puede omitirse si el producto está próximo a agotarse."},r:"A"},
+{p:"Sistema muestra inventario, pero físicamente no aparece. ¿Qué control activar?",o:{A:"Conciliación de inventario, investigación de diferencia, bloqueo y ajuste según procedimiento.",B:"Creación de novedad logística y despacho de una referencia equivalente.",C:"Notificación a comercial para informar retraso y buscar reposición externa.",D:"Ajuste inmediato del sistema para igualarlo al conteo físico."},r:"A"},
+{p:"Se detecta producto vencido en almacenamiento. ¿Qué acción inmediata realizar?",o:{A:"Retirar de disponible, identificar, bloquear/inmovilizar y reportar según procedimiento.",B:"Separar físicamente y esperar concepto de registros sanitarios antes de bloquear.",C:"Despachar únicamente si el cliente fue informado del vencimiento.",D:"Registrar observación y priorizar devolución al proveedor."},r:"A"},
+{p:"Producto en cuarentena aparece disponible para venta. ¿Qué evidencia?",o:{A:"Falla en el control de estado del inventario y riesgo de despacho no autorizado.",B:"Diferencia operativa entre inventario físico y sistema sin impacto regulatorio.",C:"Error de ubicación física que puede corregirse antes de alistamiento.",D:"Necesidad de actualizar la codificación interna del producto."},r:"A"},
+{p:"Remisión tiene cantidad diferente a la empacada. ¿Qué impacto tiene?",o:{A:"Error documental, riesgo de entrega incorrecta, diferencia de inventario y pérdida de trazabilidad.",B:"Error operativo corregible si el cliente firma recibido conforme.",C:"Diferencia menor si la factura contiene la cantidad correcta.",D:"Riesgo comercial relacionado con devolución o nota crédito."},r:"A"},
+{p:"Transportador no firma recibido ni hay evidencia de entrega. ¿Qué riesgo genera?",o:{A:"Falta de prueba de entrega, ruptura de trazabilidad logística y debilidad ante reclamaciones.",B:"Riesgo bajo si existe remisión y salida registrada del almacén.",C:"Riesgo únicamente contractual entre empresa y transportador.",D:"Riesgo corregible con confirmación telefónica del cliente."},r:"A"},
+{p:"Se solicita despacho de producto cuyo registro vence ese mes. ¿Qué validar?",o:{A:"Vigencia al momento del despacho, estado regulatorio y controles internos de comercialización.",B:"Que el producto sea entregado antes del último día del mes de vencimiento.",C:"Que el proveedor haya iniciado renovación del registro sanitario.",D:"Que el cliente acepte recibirlo antes de la fecha de vencimiento documental."},r:"A"},
+{p:"Dispositivo requiere accesorios, pero pedido solo incluye unidad principal. ¿Qué verificar?",o:{A:"Que el pedido, ficha técnica, necesidad del cliente y componentes requeridos estén completos.",B:"Que los accesorios estén disponibles como venta separada para entrega posterior.",C:"Que el cliente haya solicitado únicamente la unidad principal en la orden.",D:"Que la unidad principal pueda ser facturada sin accesorios."},r:"A"},
+{p:"Cliente reporta referencia equivocada. ¿Qué documentos revisar?",o:{A:"Orden, remisión, factura, registro de alistamiento, lote, referencia y evidencia de entrega.",B:"Registro sanitario, ficha técnica, autorización de proveedor y manual de usuario.",C:"Reclamación del cliente, correo comercial y disponibilidad de reposición.",D:"Acta de entrega, guía de transporte y confirmación telefónica del cliente."},r:"A"},
+{p:"Se mezclan lotes diferentes en una entrega sin diferenciación. ¿Qué problema genera?",o:{A:"Dificulta trazabilidad, retiro, investigación de quejas y control postmercado.",B:"Es aceptable si todos los lotes pertenecen a la misma referencia vigente.",C:"Requiere solo registrar lotes en factura para conservar trazabilidad.",D:"Genera riesgo de inventario, pero no afecta seguimiento postmercado."},r:"A"},
+{p:"Postmercado solicita inmovilizar un lote por quejas recurrentes. ¿Qué debe hacer despacho?",o:{A:"Bloquear unidades del lote, impedir despacho, identificar existencias y documentar la acción.",B:"Separar físicamente el lote, pero mantenerlo disponible hasta confirmación técnica.",C:"Despachar solo unidades ya comprometidas con clientes antes de la solicitud.",D:"Solicitar autorización de comercial antes de inmovilizar el lote."},r:"A"},
+{p:"Producto importado llega sin verificación documental. ¿Debe quedar disponible?",o:{A:"No, debe quedar retenido o bloqueado hasta validación documental y regulatoria.",B:"Sí, si la factura, referencia y cantidades coinciden con la orden de compra.",C:"No, salvo que el producto tenga alta rotación y registro sanitario conocido.",D:"Sí, pero con despacho condicionado a posterior revisión de registros."},r:"A"},
+{p:"Producto requiere transporte especial y el transportador no tiene evidencia de control. ¿Qué documentar?",o:{A:"Ausencia de evidencia de condiciones de transporte, riesgo asociado y escalamiento antes de despacho.",B:"Placa, conductor, hora de salida y compromiso verbal de manejo adecuado.",C:"Firma del transportador aceptando responsabilidad por cualquier desviación.",D:"Evidencia fotográfica del embalaje y remisión firmada antes de salida."},r:"A"},
+{p:"Auditoría solicita demostrar ruta desde recepción hasta entrega. ¿Qué evidencias conservar?",o:{A:"Recepción, lote/serial, almacenamiento, liberación, alistamiento, remisión, transporte y recibido.",B:"Factura, orden de compra, cotización, remisión y confirmación de pago.",C:"Registro sanitario, ficha técnica, autorización de venta y certificado del proveedor.",D:"Hoja de vida, mantenimiento, calibración, transporte y aceptación del cliente."},r:"A"}
+]}
+];
+
+// STATE + MULTIPLAYER
+let cid=null,ST={},selOpt=null,confirmed=false;
+let roomId=null, roomRef=null, fbReady=false, syncing=false;
+
+/*
+  PASO OBLIGATORIO PARA MULTIJUGADOR:
+  1) Crea un proyecto en Firebase.
+  2) Activa Realtime Database.
+  3) Copia aquí la configuración web de tu proyecto.
+  Mientras estos datos estén en "PEGAR_AQUI", el juego funciona solo en modo local.
+*/
+const firebaseConfig={
+  apiKey:"PEGAR_AQUI",
+  authDomain:"PEGAR_AQUI",
+  databaseURL:"PEGAR_AQUI",
+  projectId:"PEGAR_AQUI",
+  storageBucket:"PEGAR_AQUI",
+  messagingSenderId:"PEGAR_AQUI",
+  appId:"PEGAR_AQUI"
+};
+
+function firebaseConfigured(){return firebaseConfig.apiKey && firebaseConfig.apiKey!=="PEGAR_AQUI" && firebaseConfig.databaseURL && firebaseConfig.databaseURL!=="PEGAR_AQUI";}
+function initFirebase(){
+  if(!firebaseConfigured()) return false;
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    fbReady=true; return true;
+  }catch(e){console.error(e);toast('No se pudo conectar Firebase. Revisa la configuración.');return false;}
+}
+initFirebase();
+
+function defaultST(){
+  const st={};
+  G.forEach(g=>{st[g.id]={av:[...g.q.keys()],used:[],sc:{cor:0,ans:0},cur:null,selOpt:null,confirmed:false}});
+  return st;
+}
+function initST(){ST=defaultST()}
+initST();
+
+// MENU
+function renderMenu(){
+  updateRoomUI();
+  const gr=document.getElementById('ggrid');gr.innerHTML='';
+  G.forEach(g=>{
+    const s=ST[g.id]||{av:g.q.map((_,i)=>i),used:[],sc:{cor:0,ans:0}};
+    const el=document.createElement('div');el.className='gcard';
+    el.style.cssText=`--cg:${g.cg};--cib:${g.cib};--cc:${g.cc}`;
+    el.innerHTML=`<div class="cico">${g.ico}</div><h3>${g.nombre}</h3><p class="desc">${g.desc}</p>
+    <div class="cftr"><div class="qbadge">${(s.av||[]).length}<span>preguntas</span></div>
+    <button class="btn-enter" onclick="enterGrp('${g.id}')">Entrar →</button></div>`;
+    gr.appendChild(el);
+  });
+}
+
+function updateRoomUI(){
+  const rs=document.getElementById('room-status');
+  if(!rs)return;
+  if(roomId){rs.className='roomstatus on';rs.innerHTML=`Conectado a sala <span class="roomcode">${roomId}</span>. Modo simultáneo individual: cada jugador conserva sus propias preguntas.`;}
+  else if(fbReady){rs.className='roomstatus';rs.textContent='Firebase listo. Crea una sala o únete con un código para jugar en tiempo real.';}
+  else{rs.className='roomstatus';rs.innerHTML='Modo local: para multijugador pega tu configuración de Firebase en el archivo HTML.';}
+}
+
+// ROOMS
+function makeCode(){return Math.random().toString(36).slice(2,8).toUpperCase();}
+function setRoomUrl(code){const url=new URL(window.location.href);url.searchParams.set('room',code);history.replaceState(null,'',url.toString());}
+function createRoom(){
+  if(!fbReady){toast('Primero configura Firebase en el HTML para activar multijugador.');return;}
+  const code=makeCode();
+  roomId=code; roomRef=firebase.database().ref('rooms/'+roomId);
+  // Sala compartida, pero progreso individual: no se guarda el banco de preguntas en Firebase.
+  roomRef.set({createdAt:Date.now(),updatedAt:Date.now(),mode:'individual'}).then(()=>{
+    setRoomUrl(roomId);listenRoom();toast('Sala creada: '+roomId);renderMenu();
+  });
+}
+function joinRoomInput(){
+  const inp=document.getElementById('room-code-input');
+  const code=(inp.value||'').trim().toUpperCase();
+  if(!code){toast('Escribe el código de la sala.');return;}
+  joinRoom(code);
+}
+function joinRoom(code){
+  if(!fbReady){toast('Primero configura Firebase en el HTML para activar multijugador.');return;}
+  roomId=code.toUpperCase(); roomRef=firebase.database().ref('rooms/'+roomId);
+  roomRef.once('value').then(snap=>{
+    if(!snap.exists()){toast('La sala no existe. Revisa el código.');roomId=null;roomRef=null;updateRoomUI();return;}
+    setRoomUrl(roomId);listenRoom();toast('Conectado a sala '+roomId);renderMenu();
+  });
+}
+function listenRoom(){
+  if(!roomRef)return;
+  roomRef.off();
+  // La sala solo permite que varias personas entren con el mismo enlace.
+  // El avance de preguntas, respuestas y puntaje queda individual en cada navegador.
+  roomRef.on('value',snap=>{
+    const data=snap.val();
+    if(!data)return;
+    updateRoomUI();
+  });
+}
+function saveGroup(id){
+  // En modo simultáneo individual no se sincroniza el progreso de preguntas con Firebase.
+  // Así, si una persona saca una pregunta, no se elimina para los demás.
+}
+function autoJoinFromUrl(){
+  const code=new URLSearchParams(window.location.search).get('room');
+  if(code&&fbReady)joinRoom(code);
+}
+
+// ENTER
+function enterGrp(id){
+  cid=id;const g=G.find(x=>x.id===id);
+  document.documentElement.style.setProperty('--cc2',g.cc);
+  document.getElementById('gey').textContent=g.ey;
+  document.getElementById('gname').textContent=g.nombre;
+  document.getElementById('gdesc').textContent=g.desc;
+  document.getElementById('btn-draw').style.background=g.cg;
+  document.getElementById('mpanel').classList.remove('show');
+  const kg=document.getElementById('kgrid');kg.innerHTML='';
+  g.q.forEach((q,i)=>{const d=document.createElement('div');d.className='ki';d.innerHTML=`<span class="kiq">P${i+1}</span><span class="kia">${q.r}</span>`;kg.appendChild(d);});
+  resetStage();renderST();renderCurrentFromState();showScr('scr-grp');window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetStage(){
+  selOpt=null;confirmed=false;
+  document.getElementById('qstage').className='qstage';
+  document.getElementById('qstage').innerHTML='<p class="qempty">Haz clic en <strong>Sacar pregunta aleatoria</strong> para comenzar.</p>';
+  document.getElementById('btn-cfm').className='btn-cfm';
+}
+
+function renderCurrentFromState(){
+  if(!cid||!ST[cid])return;
+  const s=ST[cid];
+  if(s.cur===null||s.cur===undefined){resetStage();return;}
+  renderQuestion(s.cur);
+}
+
+function renderQuestion(qi){
+  const s=ST[cid],g=G.find(x=>x.id===cid),q=g.q[qi];
+  selOpt=s.selOpt||null; confirmed=!!s.confirmed;
+  const st=document.getElementById('qstage');
+  st.className='qstage hasq';
+  st.innerHTML=`<div class="qlbl">✦ Pregunta seleccionada</div>
+  <p class="qtxt">${q.p}</p>
+  <div class="ogrid">${['A','B','C','D'].map(k=>`<button class="obtn" id="ob-${k}" onclick="selO('${k}')"><span class="okey">${k}.</span><span class="otxt">${q.o[k]}</span></button>`).join('')}</div>
+  <div class="qfb" id="qfb"></div>`;
+  if(selOpt){['A','B','C','D'].forEach(o=>{const b=document.getElementById('ob-'+o);if(b)b.className='obtn'+(o===selOpt?' sel':'');});document.getElementById('btn-cfm').className='btn-cfm show';}
+  if(confirmed){showConfirmed(q.r);}
+}
+
+// DRAW
+function draw(){
+  const s=ST[cid],g=G.find(x=>x.id===cid);
+  if(!s.av.length){showAllDone();return;}
+  // Progreso individual por jugador: la pregunta se elimina solo del banco local de este navegador.
+  const rnd=Math.floor(Math.random()*s.av.length);
+  const qi=s.av[rnd];
+  s.av.splice(rnd,1);s.used.unshift(qi);s.cur=qi;s.selOpt=null;s.confirmed=false;
+  renderST();renderQuestion(qi);
+}
+function showAllDone(){
+  document.getElementById('qstage').className='qstage';
+  document.getElementById('qstage').innerHTML='<div class="adone"><div class="dico">🎉</div><h3>¡Todas las preguntas utilizadas!</h3><p>Reinicia el grupo para volver a jugar.</p></div>';
+  document.getElementById('btn-draw').disabled=true;document.getElementById('btn-cfm').className='btn-cfm';
+}
+
+function selO(k){
+  const s=ST[cid];
+  if(s.confirmed)return;selOpt=k;s.selOpt=k;
+  ['A','B','C','D'].forEach(o=>{const b=document.getElementById('ob-'+o);if(b)b.className='obtn'+(o===k?' sel':'');});
+  document.getElementById('btn-cfm').className='btn-cfm show';
+}
+
+function confirm(){
+  const s=ST[cid];
+  if(!selOpt||s.confirmed)return;
+  const g=G.find(x=>x.id===cid),q=g.q[s.cur],cr=q.r,ok=selOpt===cr;
+  s.confirmed=true;s.selOpt=selOpt;s.sc.ans++;if(ok)s.sc.cor++;
+  showConfirmed(cr);renderST();
+}
+function showConfirmed(cr){
+  const s=ST[cid], ok=s.selOpt===cr;
+  ['A','B','C','D'].forEach(o=>{const b=document.getElementById('ob-'+o);if(!b)return;b.disabled=true;if(o===cr)b.className='obtn cor';else if(o===s.selOpt&&!ok)b.className='obtn wrg';});
+  const fb=document.getElementById('qfb');
+  if(fb){fb.className='qfb show '+(ok?'cfb':'wfb');fb.textContent=ok?'✓ Respuesta correcta':'✕ Respuesta incorrecta. Correcta: '+cr;}
+  document.getElementById('btn-cfm').className='btn-cfm';
+  renderST();
+}
+
+function renderST(){
+  if(!cid)return;const s=ST[cid],g=G.find(x=>x.id===cid);
+  document.getElementById('st-av').textContent=s.av.length;
+  document.getElementById('st-us').textContent=s.used.length;
+  document.getElementById('sc-cor').textContent=s.sc.cor;
+  document.getElementById('sc-ans').textContent=s.sc.ans;
+  document.getElementById('btn-draw').disabled=!s.av.length;
+  const uw=document.getElementById('uwrap'),ul=document.getElementById('ulist');
+  uw.style.display=s.used.length?'block':'none';ul.innerHTML='';
+  s.used.forEach((qi,i)=>{const d=document.createElement('div');d.className='uitem';d.innerHTML=`<span class="unum">#${s.used.length-i}</span>${g.q[qi].p.substring(0,80)}…`;ul.appendChild(d);});
+  const al=document.getElementById('alist');al.innerHTML='';
+  s.av.forEach(qi=>{const d=document.createElement('div');d.className='aitem';d.textContent=`${qi+1}. ${g.q[qi].p.substring(0,90)}…`;al.appendChild(d);});
+}
+
+// NAV
+function goMenu(){renderMenu();showScr('scr-menu');}
+function resetGrp(){
+  const g=G.find(x=>x.id===cid);
+  ST[cid]={av:[...g.q.keys()],used:[],sc:{cor:0,ans:0},cur:null,selOpt:null,confirmed:false};
+  document.getElementById('btn-draw').disabled=false;resetStage();renderST();saveGroup(cid);
+}
+function showScr(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function toggleMod(){const p=document.getElementById('mpanel'),b=document.querySelector('.mbtn');p.classList.toggle('show');b.textContent=p.classList.contains('show')?'🔒 Ocultar clave':'🔑 Ver clave del moderador';}
+
+// SHARE
+function shareGame(){
+  const url=window.location.href;
+  if(navigator.share){navigator.share({title:'Escape Room Documental INVIMA',url});}
+  else if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>toast('¡Enlace copiado al portapapeles! 🔗'));}
+  else{toast('Copia el enlace de la barra de dirección');}
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+
+renderMenu();
+autoJoinFromUrl();
+
+</script>
+</body>
+</html>

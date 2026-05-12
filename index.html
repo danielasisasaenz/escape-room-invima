@@ -56,6 +56,22 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .roomstatus.on{color:var(--green);border-color:rgba(62,207,142,.28);background:var(--green-dim)}
 .roomcode{font-family:'Syne',sans-serif;color:var(--gold);font-weight:800;letter-spacing:1.5px}
 
+/* group/player scoreboards */
+.scorebox{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin:0 auto 26px;max-width:980px}
+.scorebox h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:10px}
+.scoregrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.scorecard{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.scorecard .sname{font-size:12px;color:var(--ink-muted);margin-bottom:4px}
+.scorecard .snum{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--green)}
+.scorecard .smeta{font-size:11px;color:var(--ink-dim);margin-top:2px}
+.playerbox{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:18px}
+.playerbox h4{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px}
+.playerslist{display:flex;flex-direction:column;gap:7px}
+.playerrow{display:flex;justify-content:space-between;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px}
+.playerrow strong{color:var(--ink)}
+.playerrow span{color:var(--ink-muted)}
+.teamnote{font-size:12px;color:var(--ink-muted);background:rgba(255,255,255,.03);border:1px dashed var(--border);border-radius:8px;padding:9px 11px;margin-top:10px}
+
 /* group */
 .gwrap{max-width:820px;margin:0 auto;padding:36px 22px 100px}
 .gnav{display:flex;align-items:center;gap:10px;margin-bottom:28px}
@@ -166,14 +182,19 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <p>Preguntas aleatorias sin repetición por sesión. El juego se reinicia al recargar la página.</p>
     </div>
     <div class="roombox">
-      <h3>Modo multijugador en tiempo real</h3>
-      <p>Crea una sala y comparte el enlace. Cada participante juega con su propio banco de preguntas; las preguntas usadas no se eliminan para los demás.</p>
+      <h3>Modo multijugador por grupos</h3>
+      <p>Crea una sala y comparte el enlace. Varias personas pueden entrar al mismo grupo; dentro de cada grupo las preguntas usadas se eliminan para todos los integrantes de ese grupo.</p>
       <div class="roomrow">
+        <input class="roominp" id="player-name-input" maxlength="30" placeholder="Tu nombre">
         <button class="rbtn" onclick="createRoom()">Crear sala</button>
         <input class="roominp" id="room-code-input" maxlength="8" placeholder="Código de sala">
         <button class="rbtn alt" onclick="joinRoomInput()">Unirse</button>
       </div>
       <div class="roomstatus" id="room-status">Modo local: el juego funciona en este equipo, pero no sincroniza con otros dispositivos.</div>
+    </div>
+    <div class="scorebox" id="global-scorebox" style="display:none">
+      <h3>🏆 Puntaje general por grupo</h3>
+      <div class="scoregrid" id="global-scoregrid"></div>
     </div>
     <div class="ggrid" id="ggrid"></div>
   </div>
@@ -195,6 +216,11 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="srow">
       <div class="schip av">Disponibles: <strong id="st-av">0</strong></div>
       <div class="schip us">Utilizadas: <strong id="st-us">0</strong></div>
+    </div>
+    <div class="playerbox" id="player-scorebox" style="display:none">
+      <h4>👥 Puntaje individual del grupo</h4>
+      <div class="playerslist" id="players-list"></div>
+      <div class="teamnote" id="team-note">Las preguntas usadas se comparten entre las personas de este grupo.</div>
     </div>
     <button class="btn-draw" id="btn-draw" onclick="draw()">🎲 Sacar pregunta aleatoria</button>
     <div class="qstage" id="qstage"><p class="qempty">Haz clic en <strong>Sacar pregunta aleatoria</strong> para comenzar.</p></div>
@@ -334,7 +360,11 @@ q:[
 
 // STATE + MULTIPLAYER
 let cid=null,ST={},selOpt=null,confirmed=false;
-let roomId=null, roomRef=null, fbReady=false, syncing=false;
+let roomId=null, roomRef=null, fbReady=false;
+let PLAYERS={};
+let playerId=localStorage.getItem('er_invima_player_id')||('P'+Math.random().toString(36).slice(2,10).toUpperCase());
+localStorage.setItem('er_invima_player_id',playerId);
+let playerName=localStorage.getItem('er_invima_player_name')||'';
 
 /*
   PASO OBLIGATORIO PARA MULTIJUGADOR:
@@ -363,33 +393,90 @@ function initFirebase(){
 }
 initFirebase();
 
-function defaultST(){
-  const st={};
-  G.forEach(g=>{st[g.id]={av:[...g.q.keys()],used:[],sc:{cor:0,ans:0},cur:null,selOpt:null,confirmed:false}});
-  return st;
+function initPlayerInput(){
+  const inp=document.getElementById('player-name-input');
+  if(inp){inp.value=playerName;inp.addEventListener('change',()=>{setPlayerName(inp.value);registerPlayer();});}
 }
+function setPlayerName(name){
+  playerName=(name||'').trim()||('Jugador '+playerId.slice(-4));
+  localStorage.setItem('er_invima_player_name',playerName);
+  const inp=document.getElementById('player-name-input'); if(inp)inp.value=playerName;
+}
+function ensurePlayer(){
+  const inp=document.getElementById('player-name-input');
+  const typed=inp?(inp.value||'').trim():'';
+  if(typed) setPlayerName(typed);
+  if(!playerName){
+    const n=prompt('Escribe tu nombre para registrar el puntaje individual:');
+    setPlayerName(n);
+  }
+  return true;
+}
+
+function defaultGroup(g){return {av:[...g.q.keys()],used:[],sc:{cor:0,ans:0},cur:null,selOpt:null,confirmed:false,currentBy:null,currentByName:null,answeredBy:null,answeredByName:null,updatedAt:Date.now()};}
+function defaultST(){const st={};G.forEach(g=>{st[g.id]=defaultGroup(g);});return st;}
 function initST(){ST=defaultST()}
 initST();
+
+function emptyScores(){const scores={};G.forEach(g=>{scores[g.id]={cor:0,ans:0};});return scores;}
+function normalizeGroupState(raw,g){
+  const d=defaultGroup(g), x=raw||{};
+  return {
+    av:Array.isArray(x.av)?x.av:d.av,
+    used:Array.isArray(x.used)?x.used:d.used,
+    sc:x.sc||d.sc,
+    cur:x.cur===undefined?null:x.cur,
+    selOpt:x.selOpt||null,
+    confirmed:!!x.confirmed,
+    currentBy:x.currentBy||null,
+    currentByName:x.currentByName||null,
+    answeredBy:x.answeredBy||null,
+    answeredByName:x.answeredByName||null,
+    updatedAt:x.updatedAt||Date.now()
+  };
+}
+function normalizeRoomGroups(groups){
+  const out={};
+  G.forEach(g=>{out[g.id]=normalizeGroupState(groups?groups[g.id]:null,g);});
+  return out;
+}
 
 // MENU
 function renderMenu(){
   updateRoomUI();
+  renderGlobalScores();
   const gr=document.getElementById('ggrid');gr.innerHTML='';
   G.forEach(g=>{
-    const s=ST[g.id]||{av:g.q.map((_,i)=>i),used:[],sc:{cor:0,ans:0}};
+    const s=ST[g.id]||defaultGroup(g);
+    const pct=s.sc.ans?Math.round((s.sc.cor/s.sc.ans)*100):0;
     const el=document.createElement('div');el.className='gcard';
     el.style.cssText=`--cg:${g.cg};--cib:${g.cib};--cc:${g.cc}`;
     el.innerHTML=`<div class="cico">${g.ico}</div><h3>${g.nombre}</h3><p class="desc">${g.desc}</p>
-    <div class="cftr"><div class="qbadge">${(s.av||[]).length}<span>preguntas</span></div>
-    <button class="btn-enter" onclick="enterGrp('${g.id}')">Entrar →</button></div>`;
+    <div class="cftr"><div class="qbadge">${s.sc.cor}/${s.sc.ans}<span>puntaje grupo · ${pct}%</span></div>
+    <button class="btn-enter" onclick="enterGrp('${g.id}')">Entrar →</button></div>
+    <div class="teamnote">Preguntas restantes del grupo: <strong>${(s.av||[]).length}</strong></div>`;
     gr.appendChild(el);
+  });
+}
+
+function renderGlobalScores(){
+  const box=document.getElementById('global-scorebox'), grid=document.getElementById('global-scoregrid');
+  if(!box||!grid)return;
+  box.style.display=roomId?'block':'none';
+  grid.innerHTML='';
+  G.forEach(g=>{
+    const s=ST[g.id]||defaultGroup(g);
+    const pct=s.sc.ans?Math.round((s.sc.cor/s.sc.ans)*100):0;
+    const d=document.createElement('div');d.className='scorecard';
+    d.innerHTML=`<div class="sname">${g.nombre}</div><div class="snum">${s.sc.cor}/${s.sc.ans}</div><div class="smeta">${pct}% correctas · ${s.av.length} restantes</div>`;
+    grid.appendChild(d);
   });
 }
 
 function updateRoomUI(){
   const rs=document.getElementById('room-status');
   if(!rs)return;
-  if(roomId){rs.className='roomstatus on';rs.innerHTML=`Conectado a sala <span class="roomcode">${roomId}</span>. Modo simultáneo individual: cada jugador conserva sus propias preguntas.`;}
+  if(roomId){rs.className='roomstatus on';rs.innerHTML=`Conectado a sala <span class="roomcode">${roomId}</span>. Modo por grupos: las preguntas se comparten dentro de cada grupo y el puntaje se suma por equipo.`;}
   else if(fbReady){rs.className='roomstatus';rs.textContent='Firebase listo. Crea una sala o únete con un código para jugar en tiempo real.';}
   else{rs.className='roomstatus';rs.innerHTML='Modo local: para multijugador pega tu configuración de Firebase en el archivo HTML.';}
 }
@@ -399,10 +486,12 @@ function makeCode(){return Math.random().toString(36).slice(2,8).toUpperCase();}
 function setRoomUrl(code){const url=new URL(window.location.href);url.searchParams.set('room',code);history.replaceState(null,'',url.toString());}
 function createRoom(){
   if(!fbReady){toast('Primero configura Firebase en el HTML para activar multijugador.');return;}
+  ensurePlayer();
   const code=makeCode();
   roomId=code; roomRef=firebase.database().ref('rooms/'+roomId);
-  // Sala compartida, pero progreso individual: no se guarda el banco de preguntas en Firebase.
-  roomRef.set({createdAt:Date.now(),updatedAt:Date.now(),mode:'individual'}).then(()=>{
+  const base={createdAt:Date.now(),updatedAt:Date.now(),mode:'shared_by_group',groups:defaultST(),players:{}};
+  base.players[playerId]={name:playerName,joinedAt:Date.now(),lastSeen:Date.now(),scores:emptyScores()};
+  roomRef.set(base).then(()=>{
     setRoomUrl(roomId);listenRoom();toast('Sala creada: '+roomId);renderMenu();
   });
 }
@@ -414,26 +503,42 @@ function joinRoomInput(){
 }
 function joinRoom(code){
   if(!fbReady){toast('Primero configura Firebase en el HTML para activar multijugador.');return;}
+  ensurePlayer();
   roomId=code.toUpperCase(); roomRef=firebase.database().ref('rooms/'+roomId);
   roomRef.once('value').then(snap=>{
     if(!snap.exists()){toast('La sala no existe. Revisa el código.');roomId=null;roomRef=null;updateRoomUI();return;}
-    setRoomUrl(roomId);listenRoom();toast('Conectado a sala '+roomId);renderMenu();
+    setRoomUrl(roomId);registerPlayer().then(()=>{listenRoom();toast('Conectado a sala '+roomId);renderMenu();});
+  });
+}
+function registerPlayer(){
+  if(!roomRef||!playerId)return Promise.resolve();
+  const pRef=roomRef.child('players/'+playerId);
+  return pRef.transaction(p=>{
+    if(!p)p={joinedAt:Date.now(),scores:emptyScores()};
+    if(!p.scores)p.scores=emptyScores();
+    G.forEach(g=>{if(!p.scores[g.id])p.scores[g.id]={cor:0,ans:0};});
+    p.name=playerName||('Jugador '+playerId.slice(-4));
+    p.lastSeen=Date.now();
+    return p;
   });
 }
 function listenRoom(){
   if(!roomRef)return;
   roomRef.off();
-  // La sala solo permite que varias personas entren con el mismo enlace.
-  // El avance de preguntas, respuestas y puntaje queda individual en cada navegador.
   roomRef.on('value',snap=>{
     const data=snap.val();
     if(!data)return;
+    ST=normalizeRoomGroups(data.groups||{});
+    PLAYERS=data.players||{};
     updateRoomUI();
+    renderGlobalScores();
+    if(cid){renderST();renderCurrentFromState();renderPlayerScores();}
+    renderMenu();
   });
 }
 function saveGroup(id){
-  // En modo simultáneo individual no se sincroniza el progreso de preguntas con Firebase.
-  // Así, si una persona saca una pregunta, no se elimina para los demás.
+  if(!roomRef)return;
+  roomRef.child('groups/'+id).set(ST[id]);
 }
 function autoJoinFromUrl(){
   const code=new URLSearchParams(window.location.search).get('room');
@@ -451,7 +556,7 @@ function enterGrp(id){
   document.getElementById('mpanel').classList.remove('show');
   const kg=document.getElementById('kgrid');kg.innerHTML='';
   g.q.forEach((q,i)=>{const d=document.createElement('div');d.className='ki';d.innerHTML=`<span class="kiq">P${i+1}</span><span class="kia">${q.r}</span>`;kg.appendChild(d);});
-  resetStage();renderST();renderCurrentFromState();showScr('scr-grp');window.scrollTo({top:0,behavior:'smooth'});
+  resetStage();renderST();renderCurrentFromState();renderPlayerScores();showScr('scr-grp');window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function resetStage(){
@@ -470,46 +575,85 @@ function renderCurrentFromState(){
 
 function renderQuestion(qi){
   const s=ST[cid],g=G.find(x=>x.id===cid),q=g.q[qi];
-  selOpt=s.selOpt||null; confirmed=!!s.confirmed;
+  selOpt=null; confirmed=!!s.confirmed;
   const st=document.getElementById('qstage');
   st.className='qstage hasq';
+  const by=s.currentByName?`<div class="teamnote">Pregunta sacada por: <strong>${escapeHtml(s.currentByName)}</strong>${s.confirmed&&s.answeredByName?` · Respondida por: <strong>${escapeHtml(s.answeredByName)}</strong>`:''}</div>`:'';
   st.innerHTML=`<div class="qlbl">✦ Pregunta seleccionada</div>
   <p class="qtxt">${q.p}</p>
+  ${by}
   <div class="ogrid">${['A','B','C','D'].map(k=>`<button class="obtn" id="ob-${k}" onclick="selO('${k}')"><span class="okey">${k}.</span><span class="otxt">${q.o[k]}</span></button>`).join('')}</div>
   <div class="qfb" id="qfb"></div>`;
-  if(selOpt){['A','B','C','D'].forEach(o=>{const b=document.getElementById('ob-'+o);if(b)b.className='obtn'+(o===selOpt?' sel':'');});document.getElementById('btn-cfm').className='btn-cfm show';}
-  if(confirmed){showConfirmed(q.r);}
+  if(s.confirmed){showConfirmed(q.r);}else{document.getElementById('btn-cfm').className='btn-cfm';}
 }
 
 // DRAW
 function draw(){
+  if(!cid)return;
   const s=ST[cid],g=G.find(x=>x.id===cid);
+  if(s.cur!==null&&s.cur!==undefined&&!s.confirmed){toast('Primero confirmen la respuesta actual del grupo.');return;}
   if(!s.av.length){showAllDone();return;}
-  // Progreso individual por jugador: la pregunta se elimina solo del banco local de este navegador.
-  const rnd=Math.floor(Math.random()*s.av.length);
-  const qi=s.av[rnd];
-  s.av.splice(rnd,1);s.used.unshift(qi);s.cur=qi;s.selOpt=null;s.confirmed=false;
-  renderST();renderQuestion(qi);
+  ensurePlayer();
+  if(roomRef){
+    const groupRef=roomRef.child('groups/'+cid);
+    groupRef.transaction(raw=>{
+      const gs=normalizeGroupState(raw,g);
+      if(gs.cur!==null&&gs.cur!==undefined&&!gs.confirmed)return gs;
+      if(!gs.av.length)return gs;
+      const rnd=Math.floor(Math.random()*gs.av.length);
+      const qi=gs.av[rnd];
+      gs.av.splice(rnd,1);
+      gs.used.unshift({qi,by:playerId,name:playerName,at:Date.now()});
+      gs.cur=qi;gs.selOpt=null;gs.confirmed=false;gs.currentBy=playerId;gs.currentByName=playerName;gs.answeredBy=null;gs.answeredByName=null;gs.updatedAt=Date.now();
+      return gs;
+    },(err,committed,snap)=>{if(err){console.error(err);toast('No se pudo sacar la pregunta.');}else if(committed){toast('Pregunta asignada al grupo.');}});
+  }else{
+    const rnd=Math.floor(Math.random()*s.av.length);
+    const qi=s.av[rnd];
+    s.av.splice(rnd,1);s.used.unshift({qi,by:playerId,name:playerName,at:Date.now()});s.cur=qi;s.selOpt=null;s.confirmed=false;s.currentBy=playerId;s.currentByName=playerName;s.answeredBy=null;s.answeredByName=null;
+    renderST();renderQuestion(qi);renderMenu();
+  }
 }
 function showAllDone(){
   document.getElementById('qstage').className='qstage';
-  document.getElementById('qstage').innerHTML='<div class="adone"><div class="dico">🎉</div><h3>¡Todas las preguntas utilizadas!</h3><p>Reinicia el grupo para volver a jugar.</p></div>';
+  document.getElementById('qstage').innerHTML='<div class="adone"><div class="dico">🎉</div><h3>¡Todas las preguntas del grupo fueron utilizadas!</h3><p>Reinicia el grupo para volver a jugar.</p></div>';
   document.getElementById('btn-draw').disabled=true;document.getElementById('btn-cfm').className='btn-cfm';
 }
 
 function selO(k){
   const s=ST[cid];
-  if(s.confirmed)return;selOpt=k;s.selOpt=k;
+  if(s.confirmed)return;selOpt=k;
   ['A','B','C','D'].forEach(o=>{const b=document.getElementById('ob-'+o);if(b)b.className='obtn'+(o===k?' sel':'');});
   document.getElementById('btn-cfm').className='btn-cfm show';
 }
 
 function confirm(){
+  if(!cid)return;
   const s=ST[cid];
   if(!selOpt||s.confirmed)return;
+  ensurePlayer();
   const g=G.find(x=>x.id===cid),q=g.q[s.cur],cr=q.r,ok=selOpt===cr;
-  s.confirmed=true;s.selOpt=selOpt;s.sc.ans++;if(ok)s.sc.cor++;
-  showConfirmed(cr);renderST();
+  if(roomRef){
+    const groupRef=roomRef.child('groups/'+cid);
+    groupRef.transaction(raw=>{
+      const gs=normalizeGroupState(raw,g);
+      if(gs.confirmed)return gs;
+      if(gs.cur===null||gs.cur===undefined)return gs;
+      gs.confirmed=true;gs.selOpt=selOpt;gs.answeredBy=playerId;gs.answeredByName=playerName;
+      gs.sc=gs.sc||{cor:0,ans:0};gs.sc.ans=(gs.sc.ans||0)+1;if(ok)gs.sc.cor=(gs.sc.cor||0)+1;
+      gs.updatedAt=Date.now();
+      return gs;
+    },(err,committed,snap)=>{
+      if(err){console.error(err);toast('No se pudo confirmar.');return;}
+      if(committed){
+        roomRef.child('players/'+playerId+'/scores/'+cid).transaction(sc=>{sc=sc||{cor:0,ans:0};sc.ans=(sc.ans||0)+1;if(ok)sc.cor=(sc.cor||0)+1;return sc;});
+        toast(ok?'Respuesta correcta.':'Respuesta incorrecta.');
+      }
+    });
+  }else{
+    s.confirmed=true;s.selOpt=selOpt;s.answeredBy=playerId;s.answeredByName=playerName;s.sc.ans++;if(ok)s.sc.cor++;
+    showConfirmed(cr);renderST();renderMenu();
+  }
 }
 function showConfirmed(cr){
   const s=ST[cid], ok=s.selOpt===cr;
@@ -517,30 +661,51 @@ function showConfirmed(cr){
   const fb=document.getElementById('qfb');
   if(fb){fb.className='qfb show '+(ok?'cfb':'wfb');fb.textContent=ok?'✓ Respuesta correcta':'✕ Respuesta incorrecta. Correcta: '+cr;}
   document.getElementById('btn-cfm').className='btn-cfm';
-  renderST();
 }
 
 function renderST(){
   if(!cid)return;const s=ST[cid],g=G.find(x=>x.id===cid);
   document.getElementById('st-av').textContent=s.av.length;
   document.getElementById('st-us').textContent=s.used.length;
-  document.getElementById('sc-cor').textContent=s.sc.cor;
-  document.getElementById('sc-ans').textContent=s.sc.ans;
+  document.getElementById('sc-cor').textContent=s.sc.cor||0;
+  document.getElementById('sc-ans').textContent=s.sc.ans||0;
   document.getElementById('btn-draw').disabled=!s.av.length;
   const uw=document.getElementById('uwrap'),ul=document.getElementById('ulist');
   uw.style.display=s.used.length?'block':'none';ul.innerHTML='';
-  s.used.forEach((qi,i)=>{const d=document.createElement('div');d.className='uitem';d.innerHTML=`<span class="unum">#${s.used.length-i}</span>${g.q[qi].p.substring(0,80)}…`;ul.appendChild(d);});
+  s.used.forEach((item,i)=>{const qi=typeof item==='number'?item:item.qi;const name=typeof item==='number'?'':` <span style="color:var(--ink-dim)">(${escapeHtml(item.name||'jugador')})</span>`;const d=document.createElement('div');d.className='uitem';d.innerHTML=`<span class="unum">#${s.used.length-i}</span>${g.q[qi].p.substring(0,80)}…${name}`;ul.appendChild(d);});
   const al=document.getElementById('alist');al.innerHTML='';
   s.av.forEach(qi=>{const d=document.createElement('div');d.className='aitem';d.textContent=`${qi+1}. ${g.q[qi].p.substring(0,90)}…`;al.appendChild(d);});
+  renderPlayerScores();
+}
+
+function renderPlayerScores(){
+  const box=document.getElementById('player-scorebox'), list=document.getElementById('players-list');
+  if(!box||!list||!cid)return;
+  if(!roomId){box.style.display='none';return;}
+  box.style.display='block';list.innerHTML='';
+  const rows=Object.entries(PLAYERS||{}).map(([id,p])=>({id,name:p.name||('Jugador '+id.slice(-4)),sc:(p.scores&&p.scores[cid])?p.scores[cid]:{cor:0,ans:0}}));
+  rows.sort((a,b)=>(b.sc.cor||0)-(a.sc.cor||0)||(b.sc.ans||0)-(a.sc.ans||0));
+  if(!rows.length){list.innerHTML='<div class="playerrow"><span>Aún no hay jugadores registrados</span></div>';return;}
+  rows.forEach(r=>{const pct=r.sc.ans?Math.round((r.sc.cor/r.sc.ans)*100):0;const d=document.createElement('div');d.className='playerrow';d.innerHTML=`<strong>${escapeHtml(r.name)}${r.id===playerId?' (tú)':''}</strong><span>${r.sc.cor||0}/${r.sc.ans||0} · ${pct}%</span>`;list.appendChild(d);});
 }
 
 // NAV
 function goMenu(){renderMenu();showScr('scr-menu');}
 function resetGrp(){
+  if(!cid)return;
   const g=G.find(x=>x.id===cid);
-  ST[cid]={av:[...g.q.keys()],used:[],sc:{cor:0,ans:0},cur:null,selOpt:null,confirmed:false};
-  document.getElementById('btn-draw').disabled=false;resetStage();renderST();saveGroup(cid);
+  if(roomRef){
+    if(!confirmReset())return;
+    roomRef.child('groups/'+cid).set(defaultGroup(g));
+    // Reinicia solo el puntaje individual de este grupo para todos los jugadores de la sala.
+    const updates={};
+    Object.keys(PLAYERS||{}).forEach(pid=>{updates['players/'+pid+'/scores/'+cid]={cor:0,ans:0};});
+    roomRef.update(updates);
+  }else{
+    ST[cid]=defaultGroup(g);document.getElementById('btn-draw').disabled=false;resetStage();renderST();renderMenu();
+  }
 }
+function confirmReset(){return window.confirm('¿Reiniciar este grupo para todas las personas de la sala?');}
 function showScr(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function toggleMod(){const p=document.getElementById('mpanel'),b=document.querySelector('.mbtn');p.classList.toggle('show');b.textContent=p.classList.contains('show')?'🔒 Ocultar clave':'🔑 Ver clave del moderador';}
 
@@ -552,7 +717,9 @@ function shareGame(){
   else{toast('Copia el enlace de la barra de dirección');}
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+function escapeHtml(str){return String(str||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 
+initPlayerInput();
 renderMenu();
 autoJoinFromUrl();
 

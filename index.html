@@ -373,14 +373,14 @@ let playerName=localStorage.getItem('er_invima_player_name')||'';
   3) Copia aquí la configuración web de tu proyecto.
   Mientras estos datos estén en "PEGAR_AQUI", el juego funciona solo en modo local.
 */
-const firebaseConfig={
-  apiKey:"PEGAR_AQUI",
-  authDomain:"PEGAR_AQUI",
-  databaseURL:"PEGAR_AQUI",
-  projectId:"PEGAR_AQUI",
-  storageBucket:"PEGAR_AQUI",
-  messagingSenderId:"PEGAR_AQUI",
-  appId:"PEGAR_AQUI"
+const firebaseConfig = {
+  apiKey: "AIzaSyCt-XbcfxXvS5iEbqtAL3BEc2dbCjqX5hI",
+  authDomain: "escape-room-invima.firebaseapp.com",
+  databaseURL: "https://escape-room-invima-default-rtdb.firebaseio.com/",
+  projectId: "escape-room-invima",
+  storageBucket: "escape-room-invima.firebasestorage.app",
+  messagingSenderId: "787816534430",
+  appId: "1:787816534430:web:88f7764f1b37f71f54068f"
 };
 
 function firebaseConfigured(){return firebaseConfig.apiKey && firebaseConfig.apiKey!=="PEGAR_AQUI" && firebaseConfig.databaseURL && firebaseConfig.databaseURL!=="PEGAR_AQUI";}

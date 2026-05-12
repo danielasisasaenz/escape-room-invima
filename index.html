@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Escape Room Documental — INVIMA | Multijugador por grupo</title>
+<title>Escape Room Documental — INVIMA | Multijugador por grupos</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--ink:#f0eee8;--ink-muted:#8b8fa8;--ink-dim:#555a72;--accent:#4a9eff;--accent-dim:rgba(74,158,255,.12);--gold:#f5c842;--gold-dim:rgba(245,200,66,.12);--green:#3ecf8e;--green-dim:rgba(62,207,142,.12);--red:#ff6b6b;--red-dim:rgba(255,107,107,.12);--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.14);--r:18px;--r2:10px}
@@ -64,6 +64,78 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .scorecard .sname{font-size:12px;color:var(--ink-muted);margin-bottom:4px}
 .scorecard .snum{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--green)}
 .scorecard .smeta{font-size:11px;color:var(--ink-dim);margin-top:2px}
+  .scorecard.winner{
+  border-color:rgba(62,207,142,.55);
+  box-shadow:0 0 25px rgba(62,207,142,.16);
+}
+
+.rankline{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:6px;
+}
+
+.ranknum{
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  color:var(--gold);
+  background:var(--gold-dim);
+  border:1px solid rgba(245,200,66,.25);
+  border-radius:999px;
+  padding:2px 8px;
+  font-size:11px;
+}
+
+.winbadge{
+  background:var(--green-dim);
+  color:var(--green);
+  border:1px solid rgba(62,207,142,.28);
+  border-radius:999px;
+  padding:3px 8px;
+  font-size:10px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.8px;
+}
+
+.membersbox{
+  margin-top:10px;
+  padding-top:8px;
+  border-top:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+.membertitle{
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--ink-dim);
+  font-weight:800;
+  margin-bottom:3px;
+}
+
+.memberrow{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:12px;
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--border);
+  border-radius:7px;
+  padding:6px 8px;
+}
+
+.memberrow span{
+  color:var(--ink-muted);
+}
+
+.memberrow strong{
+  color:var(--ink);
+}
 .playerbox{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:18px}
 .playerbox h4{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px}
 .playerslist{display:flex;flex-direction:column;gap:7px}
@@ -87,6 +159,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .sv .sn{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
 .sv.cor .sn{color:var(--green)}
 .sv.ans .sn{color:var(--accent)}
+.sv.bad .sn{color:var(--red)}
 /* stats */
 .srow{display:flex;gap:9px;margin-bottom:20px;flex-wrap:wrap}
 .schip{background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:7px 15px;font-size:13px;color:var(--ink-muted);display:flex;align-items:center;gap:7px}
@@ -211,6 +284,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
     <div class="sbar">
       <div class="sv cor"><div class="sl">Correctas</div><div class="sn" id="sc-cor">0</div></div>
+      <div class="sv bad"><div class="sl">Incorrectas</div><div class="sn" id="sc-bad">0</div></div>
       <div class="sv ans"><div class="sl">Respondidas</div><div class="sn" id="sc-ans">0</div></div>
     </div>
     <div class="srow">
@@ -459,15 +533,100 @@ function renderMenu(){
 }
 
 function renderGlobalScores(){
-  const box=document.getElementById('global-scorebox'), grid=document.getElementById('global-scoregrid');
+  const box=document.getElementById('global-scorebox');
+  const grid=document.getElementById('global-scoregrid');
   if(!box||!grid)return;
+
   box.style.display=roomId?'block':'none';
   grid.innerHTML='';
-  G.forEach(g=>{
+
+  const ranking = G.map(g=>{
     const s=ST[g.id]||defaultGroup(g);
-    const pct=s.sc.ans?Math.round((s.sc.cor/s.sc.ans)*100):0;
-    const d=document.createElement('div');d.className='scorecard';
-    d.innerHTML=`<div class="sname">${g.nombre}</div><div class="snum">${s.sc.cor}/${s.sc.ans}</div><div class="smeta">${pct}% correctas · ${s.av.length} restantes</div>`;
+    const correctas=s.sc?.cor||0;
+    const respondidas=s.sc?.ans||0;
+    const incorrectas=Math.max(0,respondidas-correctas);
+    const porcentaje=respondidas?Math.round((correctas/respondidas)*100):0;
+
+    const integrantes=Object.entries(PLAYERS||{})
+      .filter(([id,p]) => {
+        const ps=(p.scores&&p.scores[g.id])?p.scores[g.id]:{cor:0,ans:0};
+        return p.group===g.id || (ps.ans||0)>0;
+      })
+      .map(([id,p])=>{
+        const ps=(p.scores&&p.scores[g.id])?p.scores[g.id]:{cor:0,ans:0};
+        const cor=ps.cor||0;
+        const ans=ps.ans||0;
+        return {
+          id,
+          name:p.name||('Jugador '+id.slice(-4)),
+          cor,
+          ans,
+          bad:Math.max(0,ans-cor)
+        };
+      })
+      .sort((a,b)=>b.cor-a.cor || a.bad-b.bad || a.name.localeCompare(b.name));
+
+    return {
+      id:g.id,
+      nombre:g.nombre,
+      color:g.cc,
+      correctas,
+      incorrectas,
+      respondidas,
+      porcentaje,
+      restantes:(s.av||[]).length,
+      integrantes
+    };
+  });
+
+  ranking.sort((a,b)=>
+    b.correctas-a.correctas ||
+    b.porcentaje-a.porcentaje ||
+    a.incorrectas-b.incorrectas ||
+    a.nombre.localeCompare(b.nombre)
+  );
+
+  const ganador = ranking.find(r=>r.respondidas>0) || null;
+
+  ranking.forEach((r,index)=>{
+    const esGanador = ganador && r.id===ganador.id;
+
+    const integrantesHtml = r.integrantes.length
+      ? r.integrantes.map(p=>`
+          <div class="memberrow">
+            <span>${escapeHtml(p.name)}</span>
+            <strong>${p.cor} ✓ / ${p.bad} ✕</strong>
+          </div>
+        `).join('')
+      : `<div class="memberrow"><span>Sin participantes activos</span><strong>—</strong></div>`;
+
+    const d=document.createElement('div');
+    d.className='scorecard '+(esGanador?'winner':'');
+    d.innerHTML=`
+      <div class="rankline">
+        <span class="ranknum">#${index+1}</span>
+        <span class="sname">${r.nombre}</span>
+        ${esGanador?'<span class="winbadge">Va ganando</span>':''}
+      </div>
+
+      <div class="snum">${r.correctas} puntos</div>
+
+      <div class="smeta">
+        Correctas: <strong>${r.correctas}</strong> · 
+        Incorrectas: <strong>${r.incorrectas}</strong> · 
+        Respondidas: <strong>${r.respondidas}</strong>
+      </div>
+
+      <div class="smeta">
+        Acierto: <strong>${r.porcentaje}%</strong> · 
+        Preguntas restantes: <strong>${r.restantes}</strong>
+      </div>
+
+      <div class="membersbox">
+        <div class="membertitle">Integrantes del grupo</div>
+        ${integrantesHtml}
+      </div>
+    `;
     grid.appendChild(d);
   });
 }
@@ -547,6 +706,11 @@ function autoJoinFromUrl(){
 // ENTER
 function enterGrp(id){
   cid=id;const g=G.find(x=>x.id===id);
+  if(roomRef){
+    ensurePlayer();
+    roomRef.child('players/'+playerId+'/group').set(id);
+    roomRef.child('players/'+playerId+'/lastSeen').set(Date.now());
+  }
   document.documentElement.style.setProperty('--cc2',g.cc);
   document.getElementById('gey').textContent=g.ey;
   document.getElementById('gname').textContent=g.nombre;
@@ -666,8 +830,12 @@ function renderST(){
   if(!cid)return;const s=ST[cid],g=G.find(x=>x.id===cid);
   document.getElementById('st-av').textContent=s.av.length;
   document.getElementById('st-us').textContent=s.used.length;
-  document.getElementById('sc-cor').textContent=s.sc.cor||0;
-  document.getElementById('sc-ans').textContent=s.sc.ans||0;
+  const cor=s.sc.cor||0;
+  const ans=s.sc.ans||0;
+  document.getElementById('sc-cor').textContent=cor;
+  const badEl=document.getElementById('sc-bad');
+  if(badEl)badEl.textContent=Math.max(0,ans-cor);
+  document.getElementById('sc-ans').textContent=ans;
   document.getElementById('btn-draw').disabled=!s.av.length;
   const uw=document.getElementById('uwrap'),ul=document.getElementById('ulist');
   uw.style.display=s.used.length?'block':'none';ul.innerHTML='';
@@ -681,11 +849,35 @@ function renderPlayerScores(){
   const box=document.getElementById('player-scorebox'), list=document.getElementById('players-list');
   if(!box||!list||!cid)return;
   if(!roomId){box.style.display='none';return;}
-  box.style.display='block';list.innerHTML='';
-  const rows=Object.entries(PLAYERS||{}).map(([id,p])=>({id,name:p.name||('Jugador '+id.slice(-4)),sc:(p.scores&&p.scores[cid])?p.scores[cid]:{cor:0,ans:0}}));
-  rows.sort((a,b)=>(b.sc.cor||0)-(a.sc.cor||0)||(b.sc.ans||0)-(a.sc.ans||0));
-  if(!rows.length){list.innerHTML='<div class="playerrow"><span>Aún no hay jugadores registrados</span></div>';return;}
-  rows.forEach(r=>{const pct=r.sc.ans?Math.round((r.sc.cor/r.sc.ans)*100):0;const d=document.createElement('div');d.className='playerrow';d.innerHTML=`<strong>${escapeHtml(r.name)}${r.id===playerId?' (tú)':''}</strong><span>${r.sc.cor||0}/${r.sc.ans||0} · ${pct}%</span>`;list.appendChild(d);});
+  box.style.display='block';
+  list.innerHTML='';
+
+  const rows=Object.entries(PLAYERS||{})
+    .filter(([id,p])=>{
+      const ps=(p.scores&&p.scores[cid])?p.scores[cid]:{cor:0,ans:0};
+      return p.group===cid || (ps.ans||0)>0;
+    })
+    .map(([id,p])=>({
+      id,
+      name:p.name||('Jugador '+id.slice(-4)),
+      sc:(p.scores&&p.scores[cid])?p.scores[cid]:{cor:0,ans:0}
+    }));
+
+  rows.sort((a,b)=>(b.sc.cor||0)-(a.sc.cor||0)||((a.sc.ans||0)-(a.sc.cor||0))-((b.sc.ans||0)-(b.sc.cor||0))||a.name.localeCompare(b.name));
+
+  if(!rows.length){
+    list.innerHTML='<div class="playerrow"><span>Aún no hay jugadores registrados en este grupo</span></div>';
+    return;
+  }
+
+  rows.forEach(r=>{
+    const pct=r.sc.ans?Math.round((r.sc.cor/r.sc.ans)*100):0;
+    const malas=(r.sc.ans||0)-(r.sc.cor||0);
+    const d=document.createElement('div');
+    d.className='playerrow';
+    d.innerHTML=`<strong>${escapeHtml(r.name)}${r.id===playerId?' (tú)':''}</strong><span>${r.sc.cor||0} correctas · ${malas} malas · ${pct}%</span>`;
+    list.appendChild(d);
+  });
 }
 
 // NAV

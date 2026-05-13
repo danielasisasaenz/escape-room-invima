@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Escape Room Documental — INVIMA | Ranking de equipos</title>
+<title>Escape Room Documental — INVIMA | Multijugador por equipos</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--ink:#f0eee8;--ink-muted:#8b8fa8;--ink-dim:#555a72;--accent:#4a9eff;--accent-dim:rgba(74,158,255,.12);--gold:#f5c842;--gold-dim:rgba(245,200,66,.12);--green:#3ecf8e;--green-dim:rgba(62,207,142,.12);--red:#ff6b6b;--red-dim:rgba(255,107,107,.12);--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.14);--r:18px;--r2:10px}
@@ -59,22 +59,83 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 /* group/player scoreboards */
 .scorebox{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin:0 auto 26px;max-width:980px}
 .scorebox h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:10px}
-.scoregrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.scoregrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
 .scorecard{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px}
 .scorecard .sname{font-size:12px;color:var(--ink-muted);margin-bottom:4px}
 .scorecard .snum{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--green)}
 .scorecard .smeta{font-size:11px;color:var(--ink-dim);margin-top:2px}
+  .scorecard.winner{
+  border-color:rgba(62,207,142,.55);
+  box-shadow:0 0 25px rgba(62,207,142,.16);
+}
 
-.scoregrid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));}
-.scorecard.winner{border-color:rgba(62,207,142,.55);box-shadow:0 0 25px rgba(62,207,142,.16);}
-.rankline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
-.ranknum{font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);background:var(--gold-dim);border:1px solid rgba(245,200,66,.25);border-radius:999px;padding:2px 8px;font-size:11px;}
-.winbadge{background:var(--green-dim);color:var(--green);border:1px solid rgba(62,207,142,.28);border-radius:999px;padding:3px 8px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;}
-.membersbox{margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:5px;}
-.membertitle{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-dim);font-weight:800;margin-bottom:3px;}
-.memberrow{display:flex;justify-content:space-between;gap:10px;font-size:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:6px 8px;}
-.memberrow span{color:var(--ink-muted);}
-.memberrow strong{color:var(--ink);}
+.rankline{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:6px;
+}
+
+.ranknum{
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  color:var(--gold);
+  background:var(--gold-dim);
+  border:1px solid rgba(245,200,66,.25);
+  border-radius:999px;
+  padding:2px 8px;
+  font-size:11px;
+}
+
+.winbadge{
+  background:var(--green-dim);
+  color:var(--green);
+  border:1px solid rgba(62,207,142,.28);
+  border-radius:999px;
+  padding:3px 8px;
+  font-size:10px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.8px;
+}
+
+.membersbox{
+  margin-top:10px;
+  padding-top:8px;
+  border-top:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+.membertitle{
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--ink-dim);
+  font-weight:800;
+  margin-bottom:3px;
+}
+
+.memberrow{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:12px;
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--border);
+  border-radius:7px;
+  padding:6px 8px;
+}
+
+.memberrow span{
+  color:var(--ink-muted);
+}
+
+.memberrow strong{
+  color:var(--ink);
+}
 .playerbox{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:18px}
 .playerbox h4{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px}
 .playerslist{display:flex;flex-direction:column;gap:7px}
@@ -193,11 +254,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <p>Preguntas aleatorias sin repetición por sesión. El juego se reinicia al recargar la página.</p>
     </div>
     <div class="roombox">
-      <h3>Modo multijugador con equipos</h3>
-      <p>Crea una sala y comparte el enlace. Cada participante escribe su nombre y el nombre de su equipo, por ejemplo: Grupo 1, Grupo 2 o Grupo 3. El ranking general suma las respuestas correctas de todos los integrantes de cada equipo.</p>
+      <h3>Modo multijugador por equipos</h3>
+      <p>Crea una sala y comparte el enlace. Cada participante elige su equipo: Equipo 1, Equipo 2 o Equipo 3. Todas las respuestas correctas valen 1 punto y se suman al ranking general del equipo.</p>
       <div class="roomrow">
         <input class="roominp" id="player-name-input" maxlength="30" placeholder="Tu nombre">
-        <input class="roominp" id="team-name-input" maxlength="30" placeholder="Equipo / Grupo">
+        <select class="roominp" id="player-team-input" title="Selecciona tu equipo">
+          <option value="equipo1">Equipo 1</option>
+          <option value="equipo2">Equipo 2</option>
+          <option value="equipo3">Equipo 3</option>
+        </select>
         <button class="rbtn" onclick="createRoom()">Crear sala</button>
         <input class="roominp" id="room-code-input" maxlength="8" placeholder="Código de sala">
         <button class="rbtn alt" onclick="joinRoomInput()">Unirse</button>
@@ -216,10 +281,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <div id="scr-grp" class="screen">
   <div class="gwrap">
     <div class="gnav"><button class="btn-back" onclick="goMenu()">← Menú principal</button></div>
-    <div class="scorebox" id="group-global-scorebox" style="display:none">
-      <h3>🏆 Ranking general de equipos</h3>
-      <div class="scoregrid" id="group-global-scoregrid"></div>
-    </div>
     <div class="ghdr">
       <div class="gey" id="gey">Estación</div>
       <h2 id="gname">Grupo</h2>
@@ -381,7 +442,8 @@ let PLAYERS={};
 let playerId=localStorage.getItem('er_invima_player_id')||('P'+Math.random().toString(36).slice(2,10).toUpperCase());
 localStorage.setItem('er_invima_player_id',playerId);
 let playerName=localStorage.getItem('er_invima_player_name')||'';
-let playerTeam=localStorage.getItem('er_invima_player_team')||'';
+const TEAMS=[{id:'equipo1',nombre:'Equipo 1'},{id:'equipo2',nombre:'Equipo 2'},{id:'equipo3',nombre:'Equipo 3'}];
+let playerTeam=localStorage.getItem('er_invima_player_team')||'equipo1';
 
 /*
   PASO OBLIGATORIO PARA MULTIJUGADOR:
@@ -411,14 +473,14 @@ initFirebase();
 
 function initPlayerInput(){
   const nameInp=document.getElementById('player-name-input');
-  const teamInp=document.getElementById('team-name-input');
   if(nameInp){
     nameInp.value=playerName;
     nameInp.addEventListener('change',()=>{setPlayerName(nameInp.value);registerPlayer();});
   }
+  const teamInp=document.getElementById('player-team-input');
   if(teamInp){
     teamInp.value=playerTeam;
-    teamInp.addEventListener('change',()=>{setPlayerTeam(teamInp.value);registerPlayer();});
+    teamInp.addEventListener('change',()=>{setPlayerTeam(teamInp.value);registerPlayer();renderGlobalScores();});
   }
 }
 function setPlayerName(name){
@@ -427,27 +489,24 @@ function setPlayerName(name){
   const inp=document.getElementById('player-name-input'); if(inp)inp.value=playerName;
 }
 function setPlayerTeam(team){
-  playerTeam=(team||'').trim()||'Sin equipo';
+  playerTeam=TEAMS.some(t=>t.id===team)?team:'equipo1';
   localStorage.setItem('er_invima_player_team',playerTeam);
-  const inp=document.getElementById('team-name-input'); if(inp)inp.value=playerTeam;
+  const inp=document.getElementById('player-team-input'); if(inp)inp.value=playerTeam;
 }
 function ensurePlayer(){
   const nameInp=document.getElementById('player-name-input');
-  const teamInp=document.getElementById('team-name-input');
-  const typedName=nameInp?(nameInp.value||'').trim():'';
-  const typedTeam=teamInp?(teamInp.value||'').trim():'';
-  if(typedName) setPlayerName(typedName);
-  if(typedTeam) setPlayerTeam(typedTeam);
+  const teamInp=document.getElementById('player-team-input');
+  const typed=nameInp?(nameInp.value||'').trim():'';
+  if(typed) setPlayerName(typed);
+  if(teamInp) setPlayerTeam(teamInp.value);
   if(!playerName){
     const n=prompt('Escribe tu nombre para registrar el puntaje individual:');
     setPlayerName(n);
   }
-  if(!playerTeam || playerTeam==='Sin equipo'){
-    const t=prompt('Escribe el nombre de tu equipo o grupo, por ejemplo: Grupo 1');
-    setPlayerTeam(t);
-  }
+  if(!playerTeam) setPlayerTeam('equipo1');
   return true;
 }
+
 function defaultGroup(g){return {av:[...g.q.keys()],used:[],sc:{cor:0,ans:0},cur:null,selOpt:null,confirmed:false,currentBy:null,currentByName:null,answeredBy:null,answeredByName:null,updatedAt:Date.now()};}
 function defaultST(){const st={};G.forEach(g=>{st[g.id]=defaultGroup(g);});return st;}
 function initST(){ST=defaultST()}
@@ -483,76 +542,82 @@ function renderMenu(){
   const gr=document.getElementById('ggrid');gr.innerHTML='';
   G.forEach(g=>{
     const s=ST[g.id]||defaultGroup(g);
-    const respondidas=s.sc?.ans||0;
-    const correctas=s.sc?.cor||0;
-    const incorrectas=respondidas-correctas;
     const total=g.q.length;
+    const usadas=(s.used||[]).length;
+    const restantes=(s.av||[]).length;
     const el=document.createElement('div');el.className='gcard';
     el.style.cssText=`--cg:${g.cg};--cib:${g.cib};--cc:${g.cc}`;
     el.innerHTML=`<div class="cico">${g.ico}</div><h3>${g.nombre}</h3><p class="desc">${g.desc}</p>
-    <div class="cftr"><div class="qbadge">${respondidas}/${total}<span>preguntas respondidas</span></div>
+    <div class="cftr"><div class="qbadge">${usadas}/${total}<span>preguntas usadas</span></div>
     <button class="btn-enter" onclick="enterGrp('${g.id}')">Entrar →</button></div>
-    <div class="teamnote">Correctas en esta estación: <strong>${correctas}</strong> · Incorrectas: <strong>${incorrectas}</strong> · Restantes: <strong>${(s.av||[]).length}</strong></div>`;
+    <div class="teamnote">Disponibles en esta estación: <strong>${restantes}</strong> de <strong>${total}</strong></div>`;
     gr.appendChild(el);
   });
 }
 
-function getPlayerTotals(p){
-  const scores=p?.scores||{};
-  let cor=0, ans=0;
-  G.forEach(g=>{
-    const sc=scores[g.id]||{cor:0,ans:0};
-    cor += Number(sc.cor||0);
-    ans += Number(sc.ans||0);
-  });
-  return {cor, ans, bad:Math.max(0,ans-cor)};
-}
-function buildTeamRanking(){
-  const teams={};
-  Object.entries(PLAYERS||{}).forEach(([id,p])=>{
-    const team=(p.team||'Sin equipo').trim()||'Sin equipo';
-    if(!teams[team]) teams[team]={team,cor:0,ans:0,bad:0,members:[]};
-    const t=getPlayerTotals(p);
-    teams[team].cor += t.cor;
-    teams[team].ans += t.ans;
-    teams[team].bad += t.bad;
-    teams[team].members.push({id,name:p.name||('Jugador '+id.slice(-4)),...t});
-  });
-  const ranking=Object.values(teams).map(x=>({
-    ...x,
-    pct:x.ans?Math.round((x.cor/x.ans)*100):0
-  }));
-  ranking.sort((a,b)=>b.cor-a.cor || b.pct-a.pct || a.bad-b.bad || a.team.localeCompare(b.team));
-  ranking.forEach(t=>t.members.sort((a,b)=>b.cor-a.cor || b.ans-a.ans || a.name.localeCompare(b.name)));
-  return ranking;
-}
-function renderRankingInto(boxId,gridId){
-  const box=document.getElementById(boxId), grid=document.getElementById(gridId);
+function renderGlobalScores(){
+  const box=document.getElementById('global-scorebox');
+  const grid=document.getElementById('global-scoregrid');
   if(!box||!grid)return;
+
   box.style.display=roomId?'block':'none';
   grid.innerHTML='';
-  if(!roomId)return;
-  const ranking=buildTeamRanking();
-  if(!ranking.length){
-    grid.innerHTML='<div class="scorecard"><div class="sname">Aún no hay equipos inscritos</div><div class="smeta">Cada participante debe escribir su nombre y equipo antes de entrar.</div></div>';
-    return;
-  }
-  const topScore=ranking[0]?.cor||0;
+
+  const ranking=TEAMS.map(team=>{
+    const integrantes=Object.entries(PLAYERS||{})
+      .filter(([id,p])=>(p.team||'equipo1')===team.id)
+      .map(([id,p])=>{
+        let cor=0, ans=0;
+        G.forEach(g=>{
+          const sc=(p.scores&&p.scores[g.id])?p.scores[g.id]:{cor:0,ans:0};
+          cor += sc.cor||0;
+          ans += sc.ans||0;
+        });
+        return {id,name:p.name||('Jugador '+id.slice(-4)),cor,ans,bad:ans-cor};
+      });
+    const correctas=integrantes.reduce((a,p)=>a+p.cor,0);
+    const respondidas=integrantes.reduce((a,p)=>a+p.ans,0);
+    const incorrectas=respondidas-correctas;
+    const porcentaje=respondidas?Math.round((correctas/respondidas)*100):0;
+    return {id:team.id,nombre:team.nombre,correctas,respondidas,incorrectas,porcentaje,integrantes};
+  });
+
+  ranking.sort((a,b)=>
+    b.correctas-a.correctas ||
+    b.porcentaje-a.porcentaje ||
+    a.incorrectas-b.incorrectas ||
+    a.nombre.localeCompare(b.nombre)
+  );
+
+  const maxPuntos=ranking.length?ranking[0].correctas:0;
+
   ranking.forEach((r,index)=>{
-    const esGanador=index===0 && (r.ans>0 || topScore>0);
-    const membersHtml=r.members.length?r.members.map(m=>`<div class="memberrow"><span>${escapeHtml(m.name)}</span><strong>${m.cor} ✓ / ${m.bad} ✕</strong></div>`).join(''):'<div class="memberrow"><span>Sin integrantes</span><strong>—</strong></div>';
-    const d=document.createElement('div');d.className='scorecard '+(esGanador?'winner':'');
-    d.innerHTML=`<div class="rankline"><span class="ranknum">#${index+1}</span><span class="sname">${escapeHtml(r.team)}</span>${esGanador?'<span class="winbadge">Va ganando</span>':''}</div>
-      <div class="snum">${r.cor} puntos</div>
-      <div class="smeta">Correctas: <strong>${r.cor}</strong> · Incorrectas: <strong>${r.bad}</strong> · Respondidas: <strong>${r.ans}</strong></div>
-      <div class="smeta">Acierto: <strong>${r.pct}%</strong> · Integrantes: <strong>${r.members.length}</strong></div>
-      <div class="membersbox"><div class="membertitle">Integrantes del equipo</div>${membersHtml}</div>`;
+    const esGanador=maxPuntos>0 && r.correctas===maxPuntos;
+    const integrantesHtml=r.integrantes.length
+      ? r.integrantes.map(p=>`<div class="memberrow"><span>${escapeHtml(p.name)}</span><strong>${p.cor} ✓ / ${p.bad} ✕</strong></div>`).join('')
+      : `<div class="memberrow"><span>Sin integrantes inscritos</span><strong>0 pts</strong></div>`;
+
+    const d=document.createElement('div');
+    d.className='scorecard '+(esGanador?'winner':'');
+    d.innerHTML=`
+      <div class="rankline">
+        <span class="ranknum">#${index+1}</span>
+        <span class="sname">${r.nombre}</span>
+        ${esGanador?'<span class="winbadge">Va ganando</span>':''}
+      </div>
+      <div class="snum">${r.correctas} puntos</div>
+      <div class="smeta">Correctas: <strong>${r.correctas}</strong> · Incorrectas: <strong>${r.incorrectas}</strong> · Respondidas: <strong>${r.respondidas}</strong></div>
+      <div class="smeta">Acierto: <strong>${r.porcentaje}%</strong> · Cada correcta vale 1 punto</div>
+      <div class="membersbox"><div class="membertitle">Integrantes</div>${integrantesHtml}</div>`;
     grid.appendChild(d);
   });
 }
-function renderGlobalScores(){
-  renderRankingInto('global-scorebox','global-scoregrid');
-  renderRankingInto('group-global-scorebox','group-global-scoregrid');
+function updateRoomUI(){
+  const rs=document.getElementById('room-status');
+  if(!rs)return;
+  if(roomId){rs.className='roomstatus on';rs.innerHTML=`Conectado a sala <span class="roomcode">${roomId}</span>. Ranking por equipos activo: Equipo 1, Equipo 2 y Equipo 3.`;}
+  else if(fbReady){rs.className='roomstatus';rs.textContent='Firebase listo. Crea una sala o únete con un código para jugar en tiempo real.';}
+  else{rs.className='roomstatus';rs.innerHTML='Modo local: para multijugador pega tu configuración de Firebase en el archivo HTML.';}
 }
 
 // ROOMS
@@ -563,7 +628,7 @@ function createRoom(){
   ensurePlayer();
   const code=makeCode();
   roomId=code; roomRef=firebase.database().ref('rooms/'+roomId);
-  const base={createdAt:Date.now(),updatedAt:Date.now(),mode:'shared_by_group',groups:defaultST(),players:{}};
+  const base={createdAt:Date.now(),updatedAt:Date.now(),mode:'team_ranking_with_shared_question_banks',groups:defaultST(),players:{}};
   base.players[playerId]={name:playerName,team:playerTeam,joinedAt:Date.now(),lastSeen:Date.now(),scores:emptyScores()};
   roomRef.set(base).then(()=>{
     setRoomUrl(roomId);listenRoom();toast('Sala creada: '+roomId);renderMenu();
@@ -592,7 +657,7 @@ function registerPlayer(){
     if(!p.scores)p.scores=emptyScores();
     G.forEach(g=>{if(!p.scores[g.id])p.scores[g.id]={cor:0,ans:0};});
     p.name=playerName||('Jugador '+playerId.slice(-4));
-    p.team=playerTeam||'Sin equipo';
+    p.team=playerTeam||'equipo1';
     p.lastSeen=Date.now();
     return p;
   });
@@ -623,7 +688,7 @@ function autoJoinFromUrl(){
 // ENTER
 function enterGrp(id){
   cid=id;const g=G.find(x=>x.id===id);
-  if(roomRef){ensurePlayer();registerPlayer();}
+  if(roomRef){ensurePlayer();roomRef.child('players/'+playerId).update({name:playerName,team:playerTeam,lastStation:id,lastSeen:Date.now()});}
   document.documentElement.style.setProperty('--cc2',g.cc);
   document.getElementById('gey').textContent=g.ey;
   document.getElementById('gname').textContent=g.nombre;
@@ -759,19 +824,23 @@ function renderPlayerScores(){
   if(!box||!list||!cid)return;
   if(!roomId){box.style.display='none';return;}
   box.style.display='block';list.innerHTML='';
-  const rows=Object.entries(PLAYERS||{}).map(([id,p])=>({
-    id,
-    name:p.name||('Jugador '+id.slice(-4)),
-    team:p.team||'Sin equipo',
-    sc:(p.scores&&p.scores[cid])?p.scores[cid]:{cor:0,ans:0}
-  }));
-  rows.sort((a,b)=>(b.sc.cor||0)-(a.sc.cor||0)||(b.sc.ans||0)-(a.sc.ans||0)||a.name.localeCompare(b.name));
+  const rows=Object.entries(PLAYERS||{})
+    .filter(([id,p])=>p.team===playerTeam || id===playerId)
+    .map(([id,p])=>({
+      id,
+      name:p.name||('Jugador '+id.slice(-4)),
+      team:p.team||'equipo1',
+      sc:(p.scores&&p.scores[cid])?p.scores[cid]:{cor:0,ans:0}
+    }));
+  rows.sort((a,b)=>(b.sc.cor||0)-(a.sc.cor||0)||(b.sc.ans||0)-(a.sc.ans||0));
   if(!rows.length){list.innerHTML='<div class="playerrow"><span>Aún no hay jugadores registrados</span></div>';return;}
   rows.forEach(r=>{
     const pct=r.sc.ans?Math.round((r.sc.cor/r.sc.ans)*100):0;
     const malas=(r.sc.ans||0)-(r.sc.cor||0);
-    const d=document.createElement('div');d.className='playerrow';
-    d.innerHTML=`<strong>${escapeHtml(r.name)}${r.id===playerId?' (tú)':''}<br><small style="color:var(--ink-dim)">${escapeHtml(r.team)}</small></strong><span>${r.sc.cor||0} correctas · ${malas} malas · ${pct}%</span>`;
+    const teamName=(TEAMS.find(t=>t.id===r.team)||{nombre:'Equipo'}).nombre;
+    const d=document.createElement('div');
+    d.className='playerrow';
+    d.innerHTML=`<strong>${escapeHtml(r.name)}${r.id===playerId?' (tú)':''}</strong><span>${teamName} · ${r.sc.cor||0} correctas · ${malas} malas · ${pct}%</span>`;
     list.appendChild(d);
   });
 }
